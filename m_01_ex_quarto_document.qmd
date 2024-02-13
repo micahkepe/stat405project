@@ -1,0 +1,159 @@
+---
+title: "Module 1: Example of a RMarkdown/Quarto document"
+author: "Roberto Bertolusso"
+date: ''
+format:
+  pdf: default
+  html: default
+pdf-engine: pdflatex
+editor: visual
+fontsize: 10pt
+geometry: margin=1in
+toc: true                   # add table of contents at the beginning
+toc-depth: 2                # Only titles that start with # or ##
+---
+
+```{r setup, include=FALSE}
+## The following line is an overall configuration
+## asking that the R code is displayed.
+## Set to FALSE to avoid showing the code by default
+## (required for your final project, where you are not supposed
+##  to show code)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Elements of a Quarto document
+Quarto and Markdown can be used to produce, with ease, professional-looking documents that mix formatted text with R computational results, including plots. If you are interested in reproducible research, Quarto can be an invaluable tool.
+
+This is a paragraph. It can contain as much text as needed. When the end of the line is reached
+it is wrapped to the following line. You can insert a new-line where you prefer, and all
+the text will appear on the same paragraph.  A new paragraph starts when we leave an empty line between text lines.
+
+The section title "Elements in a Quarto document" above has been created with a # at the beginning of a line.
+By the way, this is a different paragraph.
+
+## Unordered Lists
+
+With ## at the beginning we define a sub-section. We have used it above for the sub-title "Unordered Lists".
+With ### we define a sub-sub-section. Below we have an unordered list:
+
+* To create unordered lists, simply start the line either with a "*" or a "-"
+* This is another item on the list. It can also contain sub-lists
+    * Indent with two tabs, before your * or -
+    * As you can see, it is very simple.
+
+## Ordered Lists
+
+1. For ordered lists, it suffices to start each item with a 1. and the correct numbers will be entered automatically.
+1. This is the second item. As before, lists can contain ordered sub-lists.
+    1. Remember to indent, as before.
+    1. Another sub-item.
+1. We are back at the main ordered list.
+1. We can also have an unordered sub-list.
+    * First sub-item.
+    * Second.
+1. You can mix and match ordered and unordered lists at leisure.
+
+### Tables
+We can create formatted tables with little effort:
+
+|A        | B  |  C| D|
+|:---|:---:|---:|:---:| 
+|A+ $\geq 98$ | B+  $\geq 87$ | C+ $\geq 77$ | D+ $\geq 67$ |
+|A  $\geq 94$ | B   $\geq 83$ | C  $\geq 73$ | D  $\geq 63$ |
+|A-  $\geq 90$ | B- $\geq 80$ | C- $\geq 70$ | D- $\geq 60$ |
+
+- :--- above is for left align
+- ---: for right align
+- :---: for centering
+
+### Multicolumn
+Quarto allows to create multi-column layout. Below we are going to illustrate two columns
+
+
+::: {layout-ncol=2}
+### One list on the first column
+
+- First Item
+- Second Item
+
+### A table on the second
+
+|A        | B  |  C| D|
+|:---|:---:|---:|:---:| 
+|A+ $\geq 98$ | B+  $\geq 87$ | C+ $\geq 77$ | D+ $\geq 67$ |
+|A  $\geq 94$ | B   $\geq 83$ | C  $\geq 73$ | D  $\geq 63$ |
+|A-  $\geq 90$ | B- $\geq 80$ | C- $\geq 70$ | D- $\geq 60$ |
+:::
+
+
+
+### Mathematical expressions
+Mathematical expression can be included, using LaTeX, as shown below.
+
+$$
+\begin{split}
+  a x^2 + b x + c = 0 \\
+  x^2 + 2\frac{b}{2a} x + \frac{c}{a} = 0 \\
+  x^2 + 2\frac{b}{2a} x + \frac{b^2}{4a^2} - \frac{b^2}{4a^2}+ \frac{c}{a} = 0\label{eq:sumsubs} \\
+  \left(x+\frac{b}{2a}\right)^2 = \frac{b^2}{4a^2}- \frac{c}{a} \\
+  \left(x+\frac{b}{2a}\right)^2 = \frac{b^2-4ac}{4a^2} \\
+  x_{1,2}+\frac{b}{2a} = \pm \frac{\sqrt{b^2-4ac}}{2a} \\
+  x_{1,2}= \frac{-b\pm\sqrt{b^2-4ac}}{2a}
+\end{split}
+$$
+Math, such as $ax^2+bx+c = 0$,  can also be entered inside a paragraph.
+
+
+## Running R code
+
+To run R code we use a code block, as shown below. For now do not worry if you do not understand the code itself. We can type the code block ourselves, of click on the green C button with a plus on its upper-left corner, or use the shortcut <Ctrl-Alt-I> (Windows and Linux) or <Cmd-Option-I> (Mac).
+
+```{r}
+7 + 3
+```
+
+We can specify options that change how the block is processed. For example, if we want to avoid that the R code is displayed, we can use the following option:
+
+```{r, echo=FALSE}
+a <- 5
+b <- 9
+```
+As you can see, the code has not been displayed, but it has run.
+
+## Mixing narrative with results from R code
+
+We can incorporate results obtained from R in our narrative. For example, the last code block has defined two variables, `a` and `b`. We are going to use them in this paragraph, stating that the result of adding `a`, that has a value of `r a`, to `b`, that has a value of `r b`, is `r a + b`. Note that the results in the rendered document have been provided by R.
+
+## Complete list of options for knitr
+For a complete list of options for the code blocks, 
+[please follow this link](https://yihui.name/knitr/options/)
+
+
+## Including R generated plots
+We can also include plots. Please note that Quarto allows for a different way to specify option that allows more possibilities.
+
+```{r}
+#| echo: FALSE
+#| label: fig-charts
+#| fig-cap: "Charts of Two Datasets Provided by R"
+#| fig-height: 6
+#| fig-subcap: 
+#|   - "CO2"
+#|   - "Faithful"
+#| layout-ncol: 2
+
+plot(CO2)
+plot(faithful)
+```
+
+In fact, we can reference the figures we create, for example to interpret what @fig-charts is supposed to be showing. 
+
+For a tutorial demonstrating more capabilities, [follow this link](https://quarto.org/docs/get-started/computations/rstudio.html). Of course, you can delay this until you will start working on your final project.
+
+## Conclusion
+This documents introduces some of the capabilities that RMarkdown and Quarto offer to produce professional looking documents. For more information, please visit the following links:
+
+[RMarkdown](https://rmarkdown.rstudio.com/)
+
+[Quarto](https://quarto.org/)
