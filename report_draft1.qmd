@@ -18,16 +18,46 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-data <- read.csv("/Users/Giulia/Desktop/STAT_405/Motor_Vehicle_Collisions_-_Crashes_20240213.csv")
+data <- read.csv("./data/Motor_Vehicle_Collisions_-_Crashes_20240213.csv")
 as.data.frame(data)
 ```
 
 #### Introduction
 
-Our data set contains details of motor vehicle collision occurrences reported by the NYPD from 2013 to 2023.
+Our dataset contains details of motor vehicle collision occurrences reported by the NYPD from 2013 to 2023.
 
 Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage.
 
 Our project seeks to determine the most important factors that contribute to potentially fatal accidents. We hope to provide value input to drivers in New York City in order to prevent fatalities.
 
-#### 
+#### Plot 1: Histogram
+
+```{r}
+borough <- table(data$BOROUGH)
+
+table(data$BOROUGH)
+
+names(borough) <- c("NA", "BRX", "BRN", "MAN", "QNS", "SI")
+
+barplot(borough, las = 1,
+        main = "Frequency of Car Crashes by NYC Borough (2013-2023)",
+        xlab = "Borough",
+        ylab = "Frequency (in hundreds of thousands)",
+        yaxt = "n")
+
+axp <- seq(0, 700000, by = 100000)
+axis(2, at = axp, labels = c(0:7), las = 2)
+```
+
+```{r}
+install.packages("chron")
+library(chron)
+times <- data$CRASH.TIME
+times <- paste0(times, ":00")
+times <- chron(times = times)
+
+plot(times, data$NUMBER.OF.PERSONS.KILLED, xaxt = "n")
+
+axp <- seq(0, 24, by = 1)
+axis(1, at = axp, labels = c(0:24), las = 2)
+```
