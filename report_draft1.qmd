@@ -1,0 +1,33 @@
+---
+title: "Group 3: Crash Analysis NYC"
+author: "Kevin Lei, Micah Kepe, Zachary Kepe, Giulia Costantini"
+date: ''
+format:
+  pdf: default
+  html: default
+pdf-engine: pdflatex
+editor: visual
+fontsize: 10pt
+geometry: margin=1in
+toc: true                   # add table of contents at the beginning
+toc-depth: 2                # Only titles that start with # or ##
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+data <- read.csv("/Users/Giulia/Desktop/STAT_405/Motor_Vehicle_Collisions_-_Crashes_20240213.csv")
+as.data.frame(data)
+```
+
+#### Introduction
+
+Our data set contains details of motor vehicle collision occurrences reported by the NYPD from 2013 to 2023.
+
+Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage.
+
+Our project seeks to determine the most important factors that contribute to potentially fatal accidents. We hope to provide value input to drivers in New York City in order to prevent fatalities.
+
+#### 
