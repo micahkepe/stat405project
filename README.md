@@ -1,6 +1,6 @@
 # NYC Crash Data Analysis
 
-## Background on the Data
+## About the Data
 
 via [NYC OpenData](https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95/about_data):
 
@@ -9,3 +9,5 @@ via [NYC OpenData](https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Col
 ## Data Analysis
 
 To see analysis of the data, please see the `reports` folder.
+
+*This project was created as part of STAT 405 at Rice University.*
