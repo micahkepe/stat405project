@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-data <- read.csv("./data/Motor_Vehicle_Collisions_-_Crashes_20240213.csv")
+data <- read.csv("../data/Motor_Vehicle_Collisions_-_Crashes_20240213.csv")
 as.data.frame(data)
 ```
 
