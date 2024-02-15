@@ -22,15 +22,22 @@ data <- read.csv("../data/Motor_Vehicle_Collisions_-_Crashes_20240213.csv")
 as.data.frame(data)
 ```
 
-#### Introduction
+## Introduction
 
-Our dataset contains details of motor vehicle collision occurrences reported by the NYPD from 2013 to 2023.
+The NYC OpenData dataset contains details of motor vehicle collision occurrences reported by the NYPD from 2013 to 2023. Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage. Our project seeks to determine the most important factors that contribute to potentially fatal accidents. By analyzing the data, we hope to identify to provide recommendations for reducing the number of accidents.
 
-Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage.
+## Data Description
 
-Our project seeks to determine the most important factors that contribute to potentially fatal accidents. We hope to provide value input to drivers in New York City in order to prevent fatalities.
+The dataset contains over 2 million records, each detailing a motor vehicle collision. The data includes the date, time, location (latitude, longitude, borough), and the number of individuals affected (injured or killed) among drivers, pedestrians, and cyclists. The dataset also includes information about the vehicles involved, such as the type of vehicle and the contributing factors to the crash. Our analysis will focus on understanding patterns and trends within these incidents, and identifying the most important factors that contribute to potentially fatal accidents.
 
-#### Plot 1: Histogram
+```{r}
+summary(data)
+head(data)
+```
+
+## Preliminary Plots
+
+### Plot 1: Frequency of Car Crashes by NYC Borough (2013-2023)
 
 ```{r}
 borough <- table(data$BOROUGH)
@@ -47,17 +54,90 @@ barplot(borough, las = 1,
 
 axp <- seq(0, 700000, by = 100000)
 axis(2, at = axp, labels = c(0:7), las = 2)
+
 ```
+
+#### Interpretation
+
+\[add your interpretation here\]
+
+### Plot 2: Scatter Plot of Car Crashes by Time of Day
 
 ```{r}
-install.packages("chron")
+# Uncomment the following line if `chron` package not installed, then comment again
+# install.packages("chron")
+
+# Load the chron package
 library(chron)
+
+# Extract the time of the crash from the dataset and convert it to a chron object
 times <- data$CRASH.TIME
 times <- paste0(times, ":00")
-times <- chron(times = times)
+times <- chron(times=times, format=c(times="h:m:s"))
 
-plot(times, data$NUMBER.OF.PERSONS.KILLED, xaxt = "n")
+# Create a scatter plot of the time of the crash
+plot(times, data$NUMBER.OF.PERSONS.KILLED, 
+     xlab = "Time of Day", 
+     ylab = "Number of Persons Killed", 
+     main = "Fatalities by Time of Day", col = "red")
 
-axp <- seq(0, 24, by = 1)
-axis(1, at = axp, labels = c(0:24), las = 2)
+# Add a horizontal line at y = 0
+axis(1, at = seq(0, 24, by = 1), labels = seq(0, 24, by = 1), las = 2)
+
+
 ```
+
+#### Interpretation
+
+\[add your interpretation here\]
+
+### Plot 3:
+
+```{r}
+# Add your plot code here
+```
+
+#### Interpretation
+
+\[add your interpretation here\]
+
+### Plot 4:
+
+```{r}
+# Add your plot code here
+```
+
+#### Interpretation
+
+\[add your interpretation here\]
+
+### Plot 5:
+
+```{r}
+# Add your plot code here
+```
+
+#### Interpretation
+
+\[add your interpretation here\]
+
+### Plot 6:
+
+```{r}
+# Add your plot code here
+```
+
+#### Interpretation
+
+\[add your interpretation here\]
+
+## Statistical Modeling: Simple Linear Regression
+
+```{r}
+# Add your regression code here
+
+```
+
+#### Interpretation
+
+\[add your interpretation here\]
