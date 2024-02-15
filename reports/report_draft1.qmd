@@ -1,7 +1,7 @@
 ---
 title: "Group 3: Crash Analysis NYC"
 author: "Kevin Lei, Micah Kepe, Zachary Kepe, Giulia Costantini"
-date: ''
+date: '2024-02-15'
 format:
   pdf: default
   html: default
@@ -35,25 +35,56 @@ summary(data)
 head(data)
 ```
 
+## Data Cleaning
+```{r}
+
+# Remove rows with missing values in critical columns
+cleaned_data <- data[complete.cases(data[c("BOROUGH", "LATITUDE", "LONGITUDE", "CRASH.DATE", "CRASH.TIME")]), ]
+
+# Convert CRASH.DATE to Date format
+cleaned_data$CRASH.DATE <- as.Date(cleaned_data$CRASH.DATE, format="%Y-%m-%d")
+
+# Correct outlier LATITUDE and LONGITUDE values (assuming NYC coordinates)
+cleaned_data <- cleaned_data[cleaned_data$LATITUDE > 40 & cleaned_data$LATITUDE < 41 & cleaned_data$LONGITUDE < -73 & cleaned_data$LONGITUDE > -75, ]
+
+# Convert CRASH.TIME to POSIXct format
+cleaned_data$CRASH.TIME <- as.POSIXct(cleaned_data$CRASH.TIME, format="%H:%M")
+
+```
+
 ## Preliminary Plots
 
 ### Plot 1: Frequency of Car Crashes by NYC Borough (2013-2023)
 
 ```{r}
-borough <- table(data$BOROUGH)
+# borough <- table(data$BOROUGH)
+# 
+# table(data$BOROUGH)
+# 
+# names(borough) <- c("NA", "BRX", "BRN", "MAN", "QNS", "SI")
+# 
+# barplot(borough, las = 1,
+#         main = "Frequency of Car Crashes by NYC Borough (2013-2023)",
+#         xlab = "Borough",
+#         ylab = "Frequency (in hundreds of thousands)",
+#         yaxt = "n")
+# 
+# axp <- seq(0, 700000, by = 100000)
+# axis(2, at = axp, labels = c(0:7), las = 2)
 
-table(data$BOROUGH)
+borough_cleaned <- table(cleaned_data$BOROUGH)
 
-names(borough) <- c("NA", "BRX", "BRN", "MAN", "QNS", "SI")
+names(borough_cleaned) <- c("BRX", "BRN", "MAN", "QNS", "SI")
 
-barplot(borough, las = 1,
+barplot(borough_cleaned, las = 1,
         main = "Frequency of Car Crashes by NYC Borough (2013-2023)",
         xlab = "Borough",
-        ylab = "Frequency (in hundreds of thousands)",
-        yaxt = "n")
+        ylab = "Frequency",
+        col = "blue")
 
-axp <- seq(0, 700000, by = 100000)
-axis(2, at = axp, labels = c(0:7), las = 2)
+# Adjust the axis to fit the new data range if necessary
+axp <- seq(0, max(borough_cleaned), by = 50000)
+axis(2, at = axp, labels = axp, las = 2)
 
 ```
 
@@ -61,29 +92,20 @@ axis(2, at = axp, labels = c(0:7), las = 2)
 
 \[add your interpretation here\]
 
-### Plot 2: Scatter Plot of Car Crashes by Time of Day
+### Plot 2: Histogram of Car Crashes by Time of Day
 
 ```{r}
-# Uncomment the following line if `chron` package not installed, then comment again
-# install.packages("chron")
 
-# Load the chron package
-library(chron)
+# Extract the hour from the CRASH.TIME column
+cleaned_data$Hour <- as.numeric(format(cleaned_data$CRASH.TIME, '%H'))
 
-# Extract the time of the crash from the dataset and convert it to a chron object
-times <- data$CRASH.TIME
-times <- paste0(times, ":00")
-times <- chron(times=times, format=c(times="h:m:s"))
+# Create a histogram of car crashes by time of day
+hist(cleaned_data$Hour, breaks = 24, col = "steelblue",
+     main = "Car Crashes Frequency by Time of Day",
+     xlab = "Hour of the Day",
+     ylab = "Number of Crashes")
 
-# Create a scatter plot of the time of the crash
-plot(times, data$NUMBER.OF.PERSONS.KILLED, 
-     xlab = "Time of Day", 
-     ylab = "Number of Persons Killed", 
-     main = "Fatalities by Time of Day", col = "red")
-
-# Add a horizontal line at y = 0
-axis(1, at = seq(0, 24, by = 1), labels = seq(0, 24, by = 1), las = 2)
-
+axis(1, at = seq(0, 23, by = 1), labels = seq(0, 23, by = 1))
 
 ```
 
@@ -111,10 +133,22 @@ axis(1, at = seq(0, 24, by = 1), labels = seq(0, 24, by = 1), las = 2)
 
 \[add your interpretation here\]
 
-### Plot 5:
+### Plot 5: Pie Chart of Contributing Factors to Car Crashes
 
 ```{r}
-# Add your plot code here
+
+# Create a table of contributing factors
+factors <- table(cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1)
+
+# Sort the table in descending order
+factors <- sort(factors, decreasing = TRUE)
+
+# Create a pie chart
+pie(factors[1:10], 
+    labels = names(factors)[1:10],
+    main = "Top 10 Contributing Factors to Car Crashes",
+    col = rainbow(length(factors)))
+
 ```
 
 #### Interpretation
