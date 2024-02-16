@@ -1,7 +1,7 @@
 ---
 title: "Group 3: Crash Analysis NYC"
 author: "Kevin Lei, Micah Kepe, Zachary Kepe, Giulia Costantini"
-date: '2024-02-15'
+date: 'February 13, 2024'
 format:
   pdf: default
   html: default
@@ -10,7 +10,8 @@ editor: visual
 fontsize: 10pt
 geometry: margin=1in
 toc: true                   
-toc-depth: 3                
+toc-depth: 3
+toc-title: "Table of Contents"
 ---
 
 ```{r setup, include=FALSE}
@@ -52,7 +53,7 @@ cleaned_data$CRASH.DATE <- as.Date(cleaned_data$CRASH.DATE, format="%m/%d/%Y")
 cleaned_data <- cleaned_data[cleaned_data$LATITUDE > 40 & cleaned_data$LATITUDE < 41 & cleaned_data$LONGITUDE < -73 & cleaned_data$LONGITUDE > -75, ]
 
 # convert CRASH.TIME to time format
-cleaned_data$CRASH.TIME <- times(format(strptime(cleaned_data$CRASH.TIME, 
+cleaned_data$CRASH.TIME <- times(format(strptime(cleaned_data$CRASH.TIME,
                                                  format="%H:%M"), "%H:%M:%S"))
 
 # Change empty string values in BOROUGH to 'UNKNOWN'
@@ -65,6 +66,7 @@ cleaned_data$OFF.STREET.NAME[cleaned_data$OFF.STREET.NAME == ""] <- "UNKNOWN"
 
 # Display the cleaned data
 head(cleaned_data)
+
 ```
 
 ## Preliminary Plots
