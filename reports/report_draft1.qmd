@@ -25,7 +25,7 @@ data <- as.data.frame(data)
 
 ## Introduction
 
-The NYC OpenData dataset contains details of motor vehicle collision occurrences reported by the NYPD from 2012 to 2024. Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage. Our project seeks to determine the most important factors that contribute to potentially fatal accidents. By analyzing the data, we hope to identify to provide recommendations for reducing the number of accidents.
+The NYC OpenData dataset contains details of motor vehicle collision occurrences reported by the NYPD from 2012 to 2024. Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage. Our project seeks to determine the most important factors that contribute to potentially fatal accidents. By analyzing the data, we hope to identify and provide recommendations for reducing the number of accidents.
 
 ## Data Description
 
@@ -44,13 +44,17 @@ head(data)
 library(chron)
 
 # Remove rows with missing values in critical columns
-cleaned_data <- data[complete.cases(data[c("BOROUGH", "LATITUDE", "LONGITUDE", "CRASH.DATE", "CRASH.TIME")]), ]
+cleaned_data <- data[complete.cases(data[c("BOROUGH", "LATITUDE", "LONGITUDE", 
+                                           "CRASH.DATE", "CRASH.TIME")]), ]
 
 # Convert CRASH.DATE to Date format
 cleaned_data$CRASH.DATE <- as.Date(cleaned_data$CRASH.DATE, format="%m/%d/%Y")
 
 # Correct outlier LATITUDE and LONGITUDE values (assuming NYC coordinates)
-cleaned_data <- cleaned_data[cleaned_data$LATITUDE > 40 & cleaned_data$LATITUDE < 41 & cleaned_data$LONGITUDE < -73 & cleaned_data$LONGITUDE > -75, ]
+cleaned_data <- cleaned_data[cleaned_data$LATITUDE > 40 & 
+                               cleaned_data$LATITUDE < 41 & 
+                               cleaned_data$LONGITUDE < -73 & 
+                               cleaned_data$LONGITUDE > -75, ]
 
 # convert CRASH.TIME to time format
 cleaned_data$CRASH.TIME <- times(format(strptime(cleaned_data$CRASH.TIME,
@@ -129,7 +133,9 @@ The histogram of car crashes by time of day shows that the most car crashes occu
 ```{r}
 
 # Create a table of the number of deaths per year
-deaths_per_year <- aggregate(cleaned_data$NUMBER.OF.PERSONS.KILLED > 0 ~ format(cleaned_data$CRASH.DATE, "%Y"), data=cleaned_data, sum)
+deaths_per_year <- aggregate(cleaned_data$NUMBER.OF.PERSONS.KILLED > 0 ~
+                             format(cleaned_data$CRASH.DATE, "%Y"), 
+                             data=cleaned_data, sum)
 
 # Rename columns for clarity
 names(deaths_per_year) <- c("Year", "Deaths")
