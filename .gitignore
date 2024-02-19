@@ -57,3 +57,8 @@ rsconnect/
 /*_files/
 
 # End of https://www.toptal.com/developers/gitignore/api/r
+
+# Mac OS X Finder and whatnot
+.DS_Store
+.AppleDouble
+.LSOverride
