@@ -290,3 +290,59 @@ The simple linear regression model has an R-squared value of 0.9891897, which in
 
 ## Conclusion
   The preliminary analysis of the NYC motor vehicle collision dataset has provided valuable insights into the frequency and patterns of car crashes in NYC. The analysis has revealed that the borough of Brooklyn has the highest frequency of car crashes, and that the most common contributing factor to car crashes is driver inattention/distraction. The analysis has also shown that car crashes are most likely to occur between 15:00 and 18:00, and that the highest density of car crashes occurs in the center of NYC. The simple linear regression model has provided a good fit to the data, explaining 98.9% of the variance in the number of persons injured. However, the model may be overfitting the data and may not be generalizable to other datasets. Future work will involve refining the model and identifying additional factors that contribute to car crashes in NYC.
+  
+#### Plots using ggplot2
+
+### Plot 1: Injuries by Borough
+
+```{r}
+ggplot(cleaned_data, aes(x = BOROUGH, y = NUMBER.OF.PERSONS.INJURED)) +
+  geom_boxplot() +
+  labs(title = "Injuries by Borough",
+       x = "Borough",
+       y = "Number of Injured") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Interpretation
+
+### Plot 2: 
+
+```{r}
+
+```
+
+#### Interpretation
+
+### Plot 3:
+
+```{r}
+
+```
+
+#### Interpretation
+
+### Plot 4:
+
+```{r}
+
+```
+
+#### Interpretation
+
+### Plot 5:
+
+```{r}
+
+```
+
+#### Interpretation
+
+### Plot 6:
+
+```{r}
+
+```
+
+#### Interpretation
