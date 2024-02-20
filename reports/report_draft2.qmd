@@ -300,11 +300,37 @@ The boxplot of injuries in NYC by Borough shows the areas of NYC that have the m
 
 ```
 
-### Plot 3:
+### Plot 3: Scatterplot of Top 3 Contributing Factors by Time of Day
 
 ```{r echo=FALSE}
+# Create a subset of data with only the top contributing factors
+top_factors <- cleaned_data %>%
+  filter(CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
+                                              "Failure to Yield Right-of-Way",
+                                              "Following Too Closely"))
+
+# Create a new column for hour of the day from CRASH.TIME
+top_factors <- top_factors %>%
+  mutate(HOUR = as.numeric(format(strptime(CRASH.TIME, format = "%H:%M:%S"), "%H")))
+
+# Group by hour and contributing factor, then count occurrences
+factor_by_hour <- top_factors %>%
+  group_by(HOUR, CONTRIBUTING.FACTOR.VEHICLE.1) %>%
+  summarise(Count = n())
+
+# Scatter plot of contributing factors by hour of day
+ggplot(factor_by_hour, aes(x = HOUR, y = Count, color = CONTRIBUTING.FACTOR.VEHICLE.1)) +
+  geom_point(alpha = 0.6, size = 3) +
+  labs(title = "Contributing Factors to Crashes by Hour of Day",
+       x = "Hour of the Day (24-hour format)",
+       y = "Number of Crashes",
+       color = "Contributing Factor") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  scale_x_continuous(breaks = 0:23)
 
 ```
+The scatterplot of the top 3 contributing factors by time of day shows the times that result in the most crashes in accordance to their contributing factor. What can be seen is that the hours to and from work result in the most crashes, such as 8 am and 5 pm. All contributing factors show that the crash amount increases between the hours of 8 am and 5 pm and decreases outside of those hours. This graph gives us a better understanding of the relationship between time of day, number of crashes, and contributing factors.
 
 ### Plot 4:
 
