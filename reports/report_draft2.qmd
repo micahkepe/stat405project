@@ -20,9 +20,13 @@ knitr::opts_chunk$set(echo = TRUE)
 # Install packages if not already installed
 # install.packages("tidyverse")
 # install.packages("plotly")
-# install.packages("tensorflow")
 # install.packages("keras")
 # install.packages("chron")
+
+# TensorFlow installation
+# install.packages("remotes")
+# remotes::install_github("rstudio/tensorflow")
+# install_tensorflow(envname = "r-tensorflow")
 
 # Load required libraries
 library(tidyverse)
@@ -326,8 +330,68 @@ The boxplot of injuries in NYC by Borough shows the areas of NYC that have the m
 
 ```{r echo=FALSE}
 
-# TODO: create a neural network model to predict the number of persons injured in a car crash
-
+# ATTEMPTED CODE FOR NEURAL NETWORK MODEL (TODO: FIX AND UPDATE)
+# # Further data cleaning and pre-processing for the neural network model
+# nn_data <- cleaned_data %>%
+#   select(NUMBER.OF.PERSONS.INJURED, CRASH.TIME, BOROUGH, CONTRIBUTING.FACTOR.VEHICLE.1) %>%
+#   mutate(
+#     HOUR = as.numeric(substr(CRASH.TIME, 1, 2)),
+#     BOROUGH = as.factor(BOROUGH),
+#     CONTRIBUTING.FACTOR.VEHICLE.1 = as.factor(CONTRIBUTING.FACTOR.VEHICLE.1)
+#   ) %>%
+#   na.omit() # Ensure no NA values
+# 
+# # one-hot encoding categorical variables
+# nn_data <- cleaned_data %>%
+#   select(NUMBER.OF.PERSONS.INJURED, CRASH.TIME, BOROUGH, CONTRIBUTING.FACTOR.VEHICLE.1) %>%
+#   mutate(HOUR = as.numeric(substr(CRASH.TIME, 1, 2))) %>%
+#   na.omit()
+# 
+# # Convert factors to dummy variables
+# nn_data_transformed <- model.matrix(~ HOUR + BOROUGH + CONTRIBUTING.FACTOR.VEHICLE.1 - 1, data = nn_data)
+# 
+# nn_target <- nn_data$NUMBER.OF.PERSONS.INJURED
+# 
+# # Now, when you sample indices for training, ensure both x_train/x_test and y_train/y_test are correctly assigned
+# train_indices <- sample(1:nrow(nn_data_transformed), 0.8 * nrow(nn_data_transformed))
+# x_train <- nn_data_transformed[train_indices, ]
+# y_train <- nn_target[train_indices]  # Ensure this is capturing the correct subset
+# x_test <- nn_data_transformed[-train_indices, ]
+# y_test <- nn_target[-train_indices]  # Ditto for y_test
+# 
+# # Verify the dimensions and presence of the target data
+# print(dim(x_train))
+# print(length(y_train))  # Use length for a 1D vector like y_train
+# 
+# num_features <- ncol(x_train)
+# print(paste("Number of features:", num_features))
+# 
+# # Create the neural network model
+# model <- keras_model_sequential() %>%
+#   layer_dense(units = 1, input_shape = c(num_features)) # simple linear regression model
+# 
+# # Compile the model
+# model %>% compile(
+#   optimizer = "adam",
+#   loss = "mean_squared_error",
+#   metrics = c("mean_absolute_error")
+# )
+# 
+# # Train the model
+# history <- model %>% fit(
+#   x_train, y_train,
+#   epochs = 10, # adjust as needed
+#   batch_size = 32,
+#   validation_data = list(x_test, y_test),
+#   verbose = 2
+# )
+# 
+# # Plot the training history
+# plot(history)
+# 
+# # Evaluate the model
+# evalution <- model %>% evaluate(x_test, y_test)
+# print(evalution)
 
 ```
 
