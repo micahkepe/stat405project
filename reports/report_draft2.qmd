@@ -37,7 +37,7 @@ library(ggplot2)
 library(plotly)
 library(tensorflow)
 library(keras)
-# library(dplyr)
+# library(dplyr) 
 library(chron)
 
 ```
@@ -51,7 +51,11 @@ data <- read.csv("../data/Motor_Vehicle_Collisions_-_Crashes_20240213.csv")
 
 ## Introduction
 
-The NYC OpenData dataset contains details of motor vehicle collision occurrences reported by the NYPD from 2012 to 2024. Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage. Our project seeks to determine the most important factors that contribute to potentially fatal accidents. By analyzing the data, we hope to identify to provide recommendations for reducing the number of accidents.
+The NYC OpenData dataset contains details of motor vehicle collision occurrences reported by the NYPD from 2012 to 2024. Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage. 
+
+Car crashes in the United States represent a significant public health concern, with over 42,900 deaths involving over 61,000 vehicles in 2020 according to the Insurance Institute for Highway Safety. The economic impact of car crashes is also substantial, with an estimated cost of $340 billion in 2019 via the National Highway Traffic Safety Administration.
+
+Our project seeks to determine the most important factors that contribute to potentially fatal accidents. By analyzing the data, we hope to identify to provide recommendations for reducing the number of accidents.
 
 ## Data Description
 
@@ -365,7 +369,7 @@ ggplot(factor_by_hour, aes(x = HOUR, y = Count, color = CONTRIBUTING.FACTOR.VEHI
   scale_x_continuous(breaks = 0:23)
 
 ```
-The scatterplot of the top 3 contributing factors by time of day shows the times that result in the most crashes in accordance to their contributing factor. What can be seen is that the hours to and from work result in the most crashes, such as 8 am and 5 pm. All contributing factors show that the crash amount increases between the hours of 8 am and 5 pm and decreases outside of those hours. This graph gives us a better understanding of the relationship between time of day, number of crashes, and contributing factors.
+The scatter plot of the top 3 contributing factors by time of day shows the times that result in the most crashes in accordance to their contributing factor. What can be seen is that the hours to and from work result in the most crashes, such as 8 am and 5 pm. All contributing factors show that the crash amount increases between the hours of 8 am and 5 pm and decreases outside of those hours. This graph gives us a better understanding of the relationship between time of day, number of crashes, and contributing factors.
 
 ### Plot 4:
 
@@ -458,4 +462,4 @@ The scatterplot of the top 3 contributing factors by time of day shows the times
 
 ## Conclusion
 
-TODO: update this conclusion with new findings from the updated data analysis
+TODO: update this conclusion with new findings from the updated data analysis and modeling.
