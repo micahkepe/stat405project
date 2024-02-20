@@ -261,6 +261,31 @@ The heat map of car crashes in NYC shows that the highest density of car crashes
 
 ```{r echo=FALSE}
 
+# Gathering data to long format for easier plotting
+injury_data_long <- cleaned_data %>%
+  select(BOROUGH, NUMBER.OF.PEDESTRIANS.INJURED, NUMBER.OF.CYCLIST.INJURED, NUMBER.OF.MOTORIST.INJURED) %>%
+  pivot_longer(cols = starts_with("NUMBER.OF"), names_to = "Injury.Type", values_to = "Injuries") %>%
+  mutate(Injury.Type = factor(Injury.Type, levels = c("NUMBER.OF.PEDESTRIANS.INJURED", "NUMBER.OF.CYCLIST.INJURED", "NUMBER.OF.MOTORIST.INJURED"),
+                              labels = c("Pedestrians", "Cyclists", "Motorists")))
+
+ggplot(injury_data_long, aes(x = BOROUGH, y = Injuries, fill = Injury.Type)) +
+  geom_boxplot(outlier.colour = NA, outlier.shape = 1) +
+  geom_point(position = position_dodge(width = 0.75), aes(color = Injury.Type)) +
+  scale_fill_manual(values=c("Pedestrians"="red", "Cyclists"="green", "Motorists"="blue")) +
+  scale_color_manual(values=c("Pedestrians"="red", "Cyclists"="green", "Motorists"="blue")) +
+  facet_wrap(~ Injury.Type, scales = "fixed") +
+  labs(title = "Injuries by Group Across NYC Boroughs",
+       x = "Borough",
+       y = "Number of Injuries") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom",
+        plot.title = element_text(size = 14),
+        axis.title = element_text(size = 12),
+        legend.text = element_text(size = 10)) +
+  coord_cartesian(ylim = c(0, NA))
+
+```
 
 ```
 
