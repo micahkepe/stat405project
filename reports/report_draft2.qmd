@@ -1,7 +1,7 @@
 ---
 title: "Group 3: Crash Analysis NYC- Draft 2"
 author: "Kevin Lei, Micah Kepe, Zachary Kepe, Giulia Costantini"
-date: "`r format(Sys.Date(), '%B %d, %Y')`"
+date: "2024-02-20"
 format:
   pdf: default
   html: default
@@ -10,14 +10,13 @@ editor: visual
 fontsize: 10pt
 geometry: margin=1in
 toc: true                   
-toc-depth: 3                
+toc-depth: 3
+toc-title: "Table of Contents"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
 
-```{r include=FALSE}
 # Install packages if not already installed
 # install.packages("tidyverse")
 # install.packages("plotly")
@@ -34,10 +33,14 @@ library(tensorflow)
 library(keras)
 library(dplyr)
 library(chron)
+
 ```
 
-```{r}
+```{r, echo=FALSE}
+
+# Load the data set
 data <- read.csv("../data/Motor_Vehicle_Collisions_-_Crashes_20240213.csv")
+
 ```
 
 ## Introduction
@@ -46,19 +49,15 @@ The NYC OpenData dataset contains details of motor vehicle collision occurrences
 
 ## Data Description
 
-The dataset contains over 2 million records, each detailing a motor vehicle collision. The data includes the date, time, location (latitude, longitude, borough), and the number of individuals affected (injured or killed) among drivers, pedestrians, and cyclists. The dataset also includes information about the vehicles involved, such as the type of vehicle and the contributing factors to the crash. Our analysis will focus on understanding patterns and trends within these incidents, and identifying the most important factors that contribute to potentially fatal accidents.
-
-```{r}
-dim(data)
-```
+The data set contains over 2 million records, each detailing a motor vehicle collision. The data includes the date, time, location (latitude, longitude, borough), and the number of individuals affected (injured or killed) among drivers, pedestrians, and cyclists. The data set also includes information about the vehicles involved, such as the type of vehicle and the contributing factors to the crash. Our analysis will focus on understanding patterns and trends within these incidents, and identifying the most important factors that contribute to potentially fatal accidents.
 
 ## Data Cleaning
 
-```{r}
+```{r echo=FALSE}
 
-# Perform data cleaning and preprocessing
+# Perform data cleaning and pre-processing
 cleaned_data <- data %>%
-  # Remove rows with NAs in crucial columns and filter out empty strings for BOROUGH
+  # Remove rows with NAs in crucial columns, filter out empty strings for BOROUGH
   filter(!is.na(BOROUGH) & BOROUGH != "", 
          !is.na(LATITUDE) & LATITUDE > 40 & LATITUDE < 41, 
          !is.na(LONGITUDE) & LONGITUDE < -73 & LONGITUDE > -75,
@@ -70,33 +69,37 @@ cleaned_data <- data %>%
     CRASH.TIME = format(strptime(CRASH.TIME, format = "%H:%M"), "%H:%M:%S")
   ) %>%
   # Replace empty strings with "UNKNOWN" for street names
-  mutate_at(vars(ON.STREET.NAME, CROSS.STREET.NAME, OFF.STREET.NAME), ~ifelse(. == "", "UNKNOWN", .)) %>%
+  mutate_at(vars(ON.STREET.NAME, CROSS.STREET.NAME, OFF.STREET.NAME), 
+            ~ifelse(. == "", "UNKNOWN", .)) %>%
   # Drop the LOCATION column as it's redundant
   select(-LOCATION) %>%
-  # Finally, remove any remaining rows with NA values in any column (if still desired)
+  # Finally, remove any remaining rows with NA values in any column 
   na.omit()
-
-# Display the dimensions and first few rows of the cleaned data set
-dim(cleaned_data)
-head(cleaned_data, 5)
 
 ```
 
-#### Interpretation
+For the data cleaning process, we removed rows with missing or invalid values in crucial columns, such as BOROUGH, LATITUDE, LONGITUDE, CRASH.DATE, and CRASH.TIME. We also converted the CRASH.DATE column to a Date format and the CRASH.TIME column to a more standard format. We replaced empty strings with "UNKNOWN" for street names and dropped the LOCATION column as it was redundant. Finally, we removed any remaining rows with NA values in any column.
 
-EDIT THIS: what you did and why? How many observations and variables do you have left after cleaning etc. EDIT EDIT EDIT EDIT EDIT EDIT EDIT EDIT
+As a result of the data cleaning process, the data set went from having 2,065192 rows and 29 columns to having 1,382,320 rows and 28 columns. While this is a significant reduction in the number of rows, the data set is still large enough to perform meaningful analysis.
+
+```{r}
+
+# Display the dimensions and first few rows of the cleaned data set
+dim(cleaned_data)
+
+```
 
 ## Preliminary Plots
 
 ### Plot 1: Frequency of Car Crashes by NYC Borough (2012-2024)
 
-```{r}
+```{r echo=FALSE}
 # Create a table of the frequency of car crashes by borough
 borough_cleaned <- table(cleaned_data$BOROUGH)
 
 # Calculate the bar midpoints to place x-axis labels correctly
 bar_midpoints <- barplot(borough_cleaned,
-                         main = "Frequency of Car Crashes by NYC Borough (2012-2024)",
+                         main = "Car Crash Frequency by NYC Borough (2012-2024)",
                          xlab = "Borough",
                          ylab = "Number of Crashes",
                          yaxt = "n",
@@ -111,11 +114,11 @@ axis(2, at=seq(0, 500000, by=100000),
      scientific=FALSE))
 
 # Add the x-axis labels
-text(x = bar_midpoints, y = -50000, labels = names(borough_cleaned), xpd = TRUE, srt = 45, adj = c(1,0.5), cex = 0.7)
+text(x = bar_midpoints, y = -50000, 
+     labels = names(borough_cleaned), 
+     xpd = TRUE, srt = 45, adj = c(1,0.5), cex = 0.7)
 
 ```
-
-#### Interpretation
 
 We plotted the frequency of car crashes per borough in NYC. The goal of this graph was to gain a better understanding of which boroughs were more likely to result in car crashes.
 
@@ -123,13 +126,10 @@ The borough with the least car crashes is Staten Island at around 75,000 car cra
 
 ### Plot 2: Histogram of Car Crashes by Time of Day
 
-```{r}
+```{r echo=FALSE}
 
-# Convert CRASH.TIME to hours (as numeric) and create a histogram
-cleaned_data <- cleaned_data %>%
-  mutate(HOUR_OF_CRASH = as.numeric(substr(CRASH.TIME, 1, 2)))  # Extracting hour part
-
-ggplot(cleaned_data, aes(x = HOUR_OF_CRASH)) +
+# Extract the hour from the CRASH.TIME column and convert it to a numeric value
+ggplot(cleaned_data, aes(x = as.numeric(substr(CRASH.TIME, 1, 2)))) +
   geom_histogram(bins = 24, fill = "steelblue") +
   labs(title = "Car Crashes Frequency by Time of Day",
        x = "Hour of the Day",
@@ -138,16 +138,16 @@ ggplot(cleaned_data, aes(x = HOUR_OF_CRASH)) +
 
 ```
 
-#### Interpretation
-
 The histogram of car crashes by time of day shows that the most car crashes occur around the hours of 15:00 and 18:00. This is likely due to the fact that these are the hours when people are getting off work and are driving home. The least amount of car crashes occur around the hours of 3:00 and 4:00, which is likely due to the fact that these are the hours when people are sleeping and there is less traffic on the road. This graph gives us a better understanding of when car crashes are most likely to occur. An important consideration that is that traffic patterns may vary seasonally and by day of the week, which could affect the number of car crashes.
 
 ### Plot 3: Line Graph of Deaths in Car Crashes Per Year
 
-```{r}
+```{r echo=FALSE}
 
 # Create a table of the number of deaths per year
-deaths_per_year <- aggregate(cleaned_data$NUMBER.OF.PERSONS.KILLED > 0 ~ format(cleaned_data$CRASH.DATE, "%Y"), data=cleaned_data, sum)
+deaths_per_year <- aggregate(cleaned_data$NUMBER.OF.PERSONS.KILLED > 0 ~ 
+                               format(cleaned_data$CRASH.DATE, "%Y"), 
+                             data=cleaned_data, sum)
 
 # Rename columns for clarity
 names(deaths_per_year) <- c("Year", "Deaths")
@@ -166,19 +166,16 @@ with(deaths_per_year, {
 
 ```
 
-#### Interpretation
-
 The line graph of deaths in car crashes per year shows that the number of deaths in car crashes seems to stay relatively from 2013 to 2023. The reason for the lower numbers of deaths in 2012 and 2024 are likely due to the fact that the data for each year is incomplete. This graph gives us a better understanding of the number of deaths in car crashes per year. However, a consideration that is not specified is the population of each borough and the amount of traffic through them.
 
 ### Plot 4: Pie Chart of Contributing Factors to Car Crashes
 
-```{r}
+```{r echo=FALSE}
 
 # Adjust global graphics parameters to reduce text size
 old_par <- par(cex=0.8)
 
 # Create a pie chart for the top 5 specified contributing factors to car crashes
-# Ensuring only the top 5 specified factors are considered directly in the code
 top_factors <- sort(table(cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1[
   cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 != "Unspecified" & 
   cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 != ""]), decreasing = TRUE)[1:5]
@@ -199,13 +196,11 @@ par(old_par)
 
 ```
 
-#### Interpretation
-
 Disregarding the unspecified contributing factors, the top 10 contributing factors to car crashes are: Driver Inattention/Distraction, Failure to Yield Right-of-Way, Following Too Closely, Fatigued/Drowsy, Backing Unsafely, Other Vehicular, Turning Improperly, Passing Too Closely, and Passing or Lane Usage Improper. The pie chart shows that the top contributing factor to car crashes is Driver Inattention/Distraction, which accounts for 40.4% of the observed car crashes.
 
 ### Plot 5: Top Specified Streets for Car Crashes in NYC
 
-```{r}
+```{r echo=FALSE}
 
 # Aggregating crash data by specified street name (excluding 'UNKNOWN')
 street_crashes <- table(cleaned_data$ON.STREET.NAME)
@@ -231,93 +226,86 @@ dotchart(top_streets_counts, labels = top_streets_names, cex = 0.7,
 
 ```
 
-#### Interpretation
-
 Of the observations where the street name was specified, the top 10 streets with the most car crashes are: BROADWAY, ATLANTIC AVENUE, BELT PARKWAY, 3 AVENUE, NORTHERN BOULEVARD, LONG ISLAND EXPRESSWAY, BROOKLYN QUEENS EXPRESSWAY, 2 AVENUE, LINDEN BOULEVARD, and GRAND CENTRAL PKWY. The dot plot shows that BROADWAY has the most car crashes, with over 15,000 crashes. This graph gives us a better understanding of which streets are more likely to result in car crashes. This information could be used to identify streets that require additional safety measures.
 
 ### Plot 6: Density of Car Crashes in NYC
 
-```{r}
+```{r echo=FALSE}
 
-# Create a heat mapping of car crashes by location
-smoothScatter(cleaned_data$LONGITUDE ~ cleaned_data$LATITUDE,
-              main = "Density of Car Crashes in NYC",
-              xlab = "Latitude",
-              ylab = "Longitude",
-              colramp=colorRampPalette(c("white", "blue", "red")))
+# Define famous landmarks in NYC
+landmarks <- data.frame(
+  name = c("Statue of Liberty", "Empire State Building", "Central Park", 
+           "Times Square", "Brooklyn Bridge"),
+  latitude = c(40.6892, 40.748817, 40.785091, 40.7580, 40.7061),
+  longitude = c(-74.0445, -73.985428, -73.968285, -73.9855, -73.9969)
+)
 
-# Add grid lines
-grid()
+# Create a heat mapping using ggplot
+ggplot(cleaned_data, aes(x = LONGITUDE, y = LATITUDE)) +
+  geom_bin2d(bins = 100, alpha = 0.6) +
+  scale_fill_gradient(low = "blue", high = "red") +
+  labs(title = "Density of Car Crashes in NYC",
+       x = "Longitude",
+       y = "Latitude") +
+  geom_point(data = landmarks, aes(x = longitude, y = latitude), color = "red", size = 3, shape = 3) +
+  theme_minimal() +
+  geom_text(data = landmarks, aes(x = longitude, y = latitude, label = name), vjust = -1, check_overlap = TRUE, color = "darkblue", size = 3)  # check_overlap to reduce label overlap
 
 ```
-
-#### Interpretation
 
 The heat map of car crashes in NYC shows that the highest density of car crashes occurs in the center of NYC. This is likely due to the fact that the center of NYC has the most traffic and the most people. The lowest density of car crashes occurs in the outskirts of NYC. This aligns with intuition, as the centers of cities are typically more crowded and have more traffic. This graph gives us a better understanding of where car crashes are most likely to occur in NYC.
 
-## Statistical Modeling: Simple Linear Regression
+## Further Analysis and Plotting
 
-```{r}
+### Plot 1:
 
-# TODO: create a better model
-
-```
-
-#### Interpretation
-
-# TODO: Interpret the model
-
-## Conclusion
-
-The preliminary analysis of the NYC motor vehicle collision dataset has provided valuable insights into the frequency and patterns of car crashes in NYC. The analysis has revealed that the borough of Brooklyn has the highest frequency of car crashes, and that the most common contributing factor to car crashes is driver inattention/distraction. The analysis has also shown that car crashes are most likely to occur between 15:00 and 18:00, and that the highest density of car crashes occurs in the center of NYC. The simple linear regression model has provided a good fit to the data, explaining 98.9% of the variance in the number of persons injured. However, the model may be overfitting the data and may not be generalizable to other datasets. Future work will involve refining the model and identifying additional factors that contribute to car crashes in NYC.
-
-#### Plots using ggplot2
-
-### Plot 1: 
-
-```{r}
+```{r echo=FALSE}
 
 
 ```
-
-#### Interpretation
 
 ### Plot 2:
 
-```{r}
+```{r echo=FALSE}
+
 
 ```
-
-#### Interpretation
 
 ### Plot 3:
 
-```{r}
+```{r echo=FALSE}
 
 ```
-
-#### Interpretation
 
 ### Plot 4:
 
-```{r}
+```{r echo=FALSE}
+
 
 ```
-
-#### Interpretation
 
 ### Plot 5:
 
-```{r}
+```{r echo=FALSE}
+
 
 ```
-
-#### Interpretation
 
 ### Plot 6:
 
-```{r}
+```{r echo=FALSE}
 
 ```
 
-#### Interpretation
+## Modeling: Neural Network
+
+```{r echo=FALSE}
+
+# TODO: create a neural network model to predict the number of persons injured in a car crash
+
+
+```
+
+## Conclusion
+
+TODO: update this conclusion with new findings from the updated data analysis
