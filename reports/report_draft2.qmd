@@ -22,6 +22,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # install.packages("plotly")
 # install.packages("keras")
 # install.packages("chron")
+# install.packages("reshape2")
 
 # TensorFlow installation
 # install.packages("remotes")
@@ -29,6 +30,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # install_tensorflow(envname = "r-tensorflow")
 
 # Load required libraries
+library(reshape2)
 library(tidyverse)
 library(lubridate)
 library(ggplot2)
@@ -316,10 +318,20 @@ ggplot(injury_data_long, aes(x = BOROUGH, y = Injuries, fill = Injury.Type)) +
 
 The boxplot of injuries in NYC by Borough shows the areas of NYC that have the most extreme number of injuries among pedestrians, cyclists, and motorists. The elevated numbers in certain boroughs are likely due to differences in borough population, amount of traffic, and the walkability and cyclabity of the area. The most dangerous boroughs for pedestrians in regards to car crashes is Manhattan, Brooklyn for cyclists, and Queens for motorists. This graph gives us a better understanding of the relationship between borough and injuries.
 
-### Plot 2:
+### Plot 2: Correlation Heat Map
 
 ```{r echo=FALSE}
 
+theme_set(theme_classic())
+
+# Correlation Heat Map
+corr <- abs(cor(cleaned_data[sapply(cleaned_data, is.numeric)]))
+matrix <- melt(corr)
+ggplot(matrix, aes(x = Var1, y = Var2, fill = value)) +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1)) +
+  xlab("") + ylab("") + ggtitle("Correlation Heat Map") +
+  theme(axis.text=element_text(size=7)) +
+  geom_tile()
 
 ```
 
