@@ -1,6 +1,6 @@
 ---
 title: "Group 3: Crash Analysis NYC- Draft 2"
-author: "Kevin Lei, Micah Kepe, Zachary Kepe, Giulia Costantini"
+author: "Kevin Lei!, Micah Kepe, Zachary Kepe, Giulia Costantini"
 date: "2024-02-20"
 format:
   pdf: default
