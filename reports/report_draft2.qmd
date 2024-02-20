@@ -257,7 +257,7 @@ The heat map of car crashes in NYC shows that the highest density of car crashes
 
 ## Further Analysis and Plotting
 
-### Plot 1:
+### Plot 1: Boxplot of Injuries by NYC Boroughs
 
 ```{r echo=FALSE}
 
