@@ -37,11 +37,11 @@ library(ggplot2)
 library(plotly)
 library(tensorflow)
 library(keras)
-# library(dplyr) 
 library(chron)
 library(reshape2)
 library(RColorBrewer)
 library(scales)
+
 ```
 
 ```{r, echo=FALSE}
@@ -67,7 +67,7 @@ The data set contains over 2 million records, each detailing a motor vehicle col
 
 ```{r echo=FALSE}
 
-# # Perform data cleaning and pre-processing
+# Perform data cleaning and pre-processing w/ dplyr (commented out for now)
 # cleaned_data <- data %>%
 #   # Remove rows with NAs in crucial columns, filter out empty strings for BOROUGH
 #   filter(!is.na(BOROUGH) & BOROUGH != "", 
@@ -88,29 +88,39 @@ The data set contains over 2 million records, each detailing a motor vehicle col
 #   # Finally, remove any remaining rows with NA values in any column 
 #   na.omit()
 
-# New Code
 
-# Perform data cleaning and pre-processing
+# Perform data cleaning and pre-processing w/ base R
 cleaned_data <- data
-cleaned_data <- cleaned_data[!is.na(cleaned_data$BOROUGH) & cleaned_data$BOROUGH != "", ]
-cleaned_data <- cleaned_data[!is.na(cleaned_data$LATITUDE) & cleaned_data$LATITUDE > 40 & cleaned_data$LATITUDE < 41, ]
-cleaned_data <- cleaned_data[!is.na(cleaned_data$LONGITUDE) & cleaned_data$LONGITUDE < -73 & cleaned_data$LONGITUDE > -75, ]
+cleaned_data <- cleaned_data[!is.na(cleaned_data$BOROUGH) & 
+                               cleaned_data$BOROUGH != "", ]
+cleaned_data <- cleaned_data[!is.na(cleaned_data$LATITUDE) & 
+                               cleaned_data$LATITUDE > 40 & 
+                               cleaned_data$LATITUDE < 41, ]
+cleaned_data <- cleaned_data[!is.na(cleaned_data$LONGITUDE) & 
+                               cleaned_data$LONGITUDE < -73 & 
+                               cleaned_data$LONGITUDE > -75, ]
 cleaned_data <- cleaned_data[!is.na(cleaned_data$CRASH.DATE), ]
 cleaned_data <- cleaned_data[!is.na(cleaned_data$CRASH.TIME), ]
 
 # Convert CRASH.DATE to Date format and CRASH.TIME to a more standard format
 cleaned_data$CRASH.DATE <- as.Date(cleaned_data$CRASH.DATE, format = "%m/%d/%Y")
-cleaned_data$CRASH.TIME <- format(strptime(cleaned_data$CRASH.TIME, format = "%H:%M"), "%H:%M:%S")
+cleaned_data$CRASH.TIME <- format(strptime(cleaned_data$CRASH.TIME, 
+                                           format = "%H:%M"), "%H:%M:%S")
 
 # Replace empty strings with "UNKNOWN" for street names
-street_name_columns <- c("ON.STREET.NAME", "CROSS.STREET.NAME", "OFF.STREET.NAME")
-cleaned_data[street_name_columns] <- lapply(cleaned_data[street_name_columns], function(x) ifelse(x == "", "UNKNOWN", x))
+street_name_columns <- c("ON.STREET.NAME", 
+                         "CROSS.STREET.NAME", 
+                         "OFF.STREET.NAME")
+cleaned_data[street_name_columns] <- lapply(cleaned_data[street_name_columns], 
+                                            function(x) ifelse(x == "", 
+                                                               "UNKNOWN", x))
 
 # Drop the LOCATION column as it's redundant
 cleaned_data <- cleaned_data[, !(names(cleaned_data) %in% "LOCATION")]
 
 # Finally, remove any remaining rows with NA values in any column 
 cleaned_data <- na.omit(cleaned_data)
+
 ```
 
 For the data cleaning process, we removed rows with missing or invalid values in crucial columns, such as BOROUGH, LATITUDE, LONGITUDE, CRASH.DATE, and CRASH.TIME. We also converted the CRASH.DATE column to a Date format and the CRASH.TIME column to a more standard format. We replaced empty strings with "UNKNOWN" for street names and dropped the LOCATION column as it was redundant. Finally, we removed any remaining rows with NA values in any column.
@@ -169,7 +179,9 @@ ggplot(cleaned_data, aes(x = as.numeric(substr(CRASH.TIME, 1, 2)))) +
   labs(title = "Car Crashes Frequency by Time of Day",
        x = "Hour of the Day",
        y = "Number of Crashes") +
-  scale_x_continuous(breaks = 0:23)
+  scale_x_continuous(breaks = 0:23) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
 
 ```
 
@@ -282,9 +294,11 @@ ggplot(cleaned_data, aes(x = LONGITUDE, y = LATITUDE)) +
   labs(title = "Density of Car Crashes in NYC",
        x = "Longitude",
        y = "Latitude") +
-  geom_point(data = landmarks, aes(x = longitude, y = latitude), color = "red", size = 3, shape = 3) +
+  geom_point(data = landmarks, aes(x = longitude, y = latitude), 
+             color = "red", size = 3, shape = 3) +
   theme_minimal() +
-  geom_text(data = landmarks, aes(x = longitude, y = latitude, label = name), vjust = -1, check_overlap = TRUE, color = "darkblue", size = 3)
+  geom_text(data = landmarks, aes(x = longitude, y = latitude, label = name), 
+            vjust = -1, check_overlap = TRUE, color = "darkblue", size = 3)
 
 ```
 
@@ -298,16 +312,28 @@ The heat map of car crashes in NYC shows that the highest density of car crashes
 
 # Gathering data to long format for easier plotting
 injury_data_long <- cleaned_data %>%
-  select(BOROUGH, NUMBER.OF.PEDESTRIANS.INJURED, NUMBER.OF.CYCLIST.INJURED, NUMBER.OF.MOTORIST.INJURED) %>%
-  pivot_longer(cols = starts_with("NUMBER.OF"), names_to = "Injury.Type", values_to = "Injuries") %>%
-  mutate(Injury.Type = factor(Injury.Type, levels = c("NUMBER.OF.PEDESTRIANS.INJURED", "NUMBER.OF.CYCLIST.INJURED", "NUMBER.OF.MOTORIST.INJURED"),
-                              labels = c("Pedestrians", "Cyclists", "Motorists")))
+  select(BOROUGH, NUMBER.OF.PEDESTRIANS.INJURED, 
+         NUMBER.OF.CYCLIST.INJURED, NUMBER.OF.MOTORIST.INJURED) %>%
+  pivot_longer(cols = starts_with("NUMBER.OF"), 
+               names_to = "Injury.Type", 
+               values_to = "Injuries") %>%
+  mutate(Injury.Type = factor(Injury.Type, 
+                              levels = c("NUMBER.OF.PEDESTRIANS.INJURED", 
+                                         "NUMBER.OF.CYCLIST.INJURED", 
+                                         "NUMBER.OF.MOTORIST.INJURED"),
+                              labels = c("Pedestrians", 
+                                         "Cyclists", 
+                                         "Motorists")))
 
 ggplot(injury_data_long, aes(x = BOROUGH, y = Injuries, fill = Injury.Type)) +
   geom_boxplot(outlier.colour = NA, outlier.shape = 1) +
   geom_point(position = position_dodge(width = 0.75), aes(color = Injury.Type)) +
-  scale_fill_manual(values=c("Pedestrians"="red", "Cyclists"="green", "Motorists"="blue")) +
-  scale_color_manual(values=c("Pedestrians"="red", "Cyclists"="green", "Motorists"="blue")) +
+  scale_fill_manual(values=c("Pedestrians"="red", 
+                             "Cyclists"="green", 
+                             "Motorists"="blue")) +
+  scale_color_manual(values=c("Pedestrians"="red", 
+                              "Cyclists"="green", 
+                              "Motorists"="blue")) +
   facet_wrap(~ Injury.Type, scales = "fixed") +
   labs(title = "Injuries by Group Across NYC Boroughs",
        x = "Borough",
@@ -328,14 +354,17 @@ The boxplot of injuries in NYC by Borough shows the areas of NYC that have the m
 
 ```{r echo=FALSE, fig.height = 6, fig.width = 7}
 
-factors <- cleaned_data[cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
-                                                                         "Failure to Yield Right-of-Way",
-                                                                         "Backing Unsafely",
-                                                                         "Following Too Closely",
-                                                                         "Other Vehicular"), ]
+# Create a subset of data with only the top contributing factors
+factors <- cleaned_data[cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% 
+                          c("Driver Inattention/Distraction",
+                             "Failure to Yield Right-of-Way",
+                             "Backing Unsafely",
+                             "Following Too Closely",
+                             "Other Vehicular"), ]
 
-# Create the plot
-ggplot(data = factors, aes(x = CONTRIBUTING.FACTOR.VEHICLE.1, y = NUMBER.OF.PERSONS.INJURED)) +
+# Create the point plot for the top contributing factors
+ggplot(data = factors, aes(x = CONTRIBUTING.FACTOR.VEHICLE.1, 
+                           y = NUMBER.OF.PERSONS.INJURED)) +
   geom_point(aes(color = CONTRIBUTING.FACTOR.VEHICLE.1), size = 3) +
   scale_color_brewer(palette = "Set1") +
   labs(title = "Injuries Related to Contributing Factors in Vehicle Crashes",
@@ -350,27 +379,47 @@ ggplot(data = factors, aes(x = CONTRIBUTING.FACTOR.VEHICLE.1, y = NUMBER.OF.PERS
 
 ```
 
-The point plot shows the number of injuries per contributing factor, illustrating that driver inattention/distraction result in more frequent instances of high injury crashes. This graph gives us a better understanding of the relationship between contributing factor and injury outcomes.
+The point plot shows the number of injuries per contributing factor, illustrating that driver inattention/distraction result in more frequent instances of high injury crashes. This graph gives us a better understanding of the relationship between contributing factor and injury outcomes. In combination with the previous plot, we can see that driver inattention/distraction is the most common contributing factor to car crashes and results in the most injuries.
 
 ### Plot 3: Scatterplot of Top 3 Contributing Factors by Time of Day
 
 ```{r echo=FALSE}
+
 # Create a subset of data with only the top contributing factors
-top_factors <- cleaned_data %>%
-  filter(CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
-                                              "Failure to Yield Right-of-Way",
-                                              "Backing Unsafely"))
+top_factors_indices <- cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% 
+  c("Driver Inattention/Distraction",
+     "Failure to Yield Right-of-Way",
+     "Backing Unsafely")
+top_factors <- cleaned_data[top_factors_indices, ]
 
 # Create a new column for hour of the day from CRASH.TIME
-top_factors <- top_factors %>%
-  mutate(HOUR = as.numeric(format(strptime(CRASH.TIME, format = "%H:%M:%S"), "%H")))
+top_factors$HOUR <- as.numeric(format(strptime(top_factors$CRASH.TIME, 
+                                               format = "%H:%M:%S"), "%H"))
 
-# Group by hour and contributing factor, then count occurrences
-factor_by_hour <- top_factors %>%
-  group_by(HOUR, CONTRIBUTING.FACTOR.VEHICLE.1) %>%
-  summarise(Count = n())
+# Initialize a data frame for aggregated results
+factor_by_hour <- data.frame(HOUR = integer(), 
+                             CONTRIBUTING.FACTOR.VEHICLE.1 = character(), 
+                             Count = integer())
 
-# Scatter plot of contributing factors by hour of day
+# Loop through unique hours and factors to count occurrences
+for (hour in unique(top_factors$HOUR)) {
+  for (factor in unique(top_factors$CONTRIBUTING.FACTOR.VEHICLE.1)) {
+    # Subset data for each hour and factor
+    subset_data <- top_factors[top_factors$HOUR == hour & 
+                                 top_factors$CONTRIBUTING.FACTOR.VEHICLE.1 == factor, ]
+    
+    # Count number of rows for each subset
+    count <- nrow(subset_data)
+    
+    # Append to the results data frame
+    factor_by_hour <- rbind(factor_by_hour, 
+                            data.frame(HOUR = hour, 
+                                       CONTRIBUTING.FACTOR.VEHICLE.1 = factor, 
+                                       Count = count))
+  }
+}
+
+# Use ggplot2 for plotting
 ggplot(factor_by_hour, aes(x = HOUR, y = Count, color = CONTRIBUTING.FACTOR.VEHICLE.1)) +
   geom_point(alpha = 0.6, size = 3) +
   labs(title = "Contributing Factors to Crashes by Hour of Day",
@@ -397,13 +446,17 @@ plot_data <- cleaned_data
 plot_data$YEAR <- as.numeric(format(as.Date(plot_data$CRASH.DATE, "%m/%d/%Y"), "%Y"))
 
 # Remove 'Unspecified' from contributing factors
-plot_data <- subset(plot_data, CONTRIBUTING.FACTOR.VEHICLE.1 != "Unspecified" & CONTRIBUTING.FACTOR.VEHICLE.1 != "")
+plot_data <- subset(plot_data, CONTRIBUTING.FACTOR.VEHICLE.1 != "Unspecified" & 
+                      CONTRIBUTING.FACTOR.VEHICLE.1 != "")
 
 # Aggregate data by YEAR and CONTRIBUTING FACTOR
-agg_data <- aggregate(cbind(COUNT = plot_data$COLLISION_ID) ~ YEAR + CONTRIBUTING.FACTOR.VEHICLE.1, data=plot_data, FUN=length)
+agg_data <- aggregate(cbind(COUNT = plot_data$COLLISION_ID) ~ 
+                        YEAR + CONTRIBUTING.FACTOR.VEHICLE.1, 
+                      data=plot_data, FUN=length)
 
 # Find the top 5 contributing factors based on the overall count
-top_factors <- aggregate(COUNT ~ CONTRIBUTING.FACTOR.VEHICLE.1, data=agg_data, FUN=sum)
+top_factors <- aggregate(COUNT ~ CONTRIBUTING.FACTOR.VEHICLE.1, 
+                         data=agg_data, FUN=sum)
 top_factors <- top_factors[order(-top_factors$COUNT), ]
 top_factors <- head(top_factors$CONTRIBUTING.FACTOR.VEHICLE.1, 5)
 
@@ -415,7 +468,8 @@ num_factors <- length(top_factors)
 colors <- colorRampPalette(brewer.pal(min(num_factors, 9), "Set1"))(num_factors)
 
 # Create the stacked area plot for the top 5 factors with the requested adjustments
-plot <- ggplot(agg_data, aes(x = YEAR, y = COUNT, fill = CONTRIBUTING.FACTOR.VEHICLE.1)) +
+plot <- ggplot(agg_data, aes(x = YEAR, y = COUNT, 
+                             fill = CONTRIBUTING.FACTOR.VEHICLE.1)) +
   geom_area(position = 'stack') +
   scale_fill_manual(values = colors) +
   labs(title = "Trends of Top 5 Contributing Factors to Crashes Over Time",
@@ -444,12 +498,16 @@ The stacked area plot of the top 5 contributing factors to car crashes by year s
 ### Plot 5: Jitter Plot of Fatalities and Injuries by Contributing Factor
 
 ```{r echo=FALSE}
-ggplot(data = cleaned_data[cleaned_data$NUMBER.OF.PERSONS.INJURED + cleaned_data$NUMBER.OF.PERSONS.KILLED > 0
-                           & cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
-                                                                                "Failure to Yield Right-of-Way",
-                                                                                "Following Too Closely",
-                                                                                "Other Vehicular",
-                                                                                "Passing Too Closely"),]) +
+
+# Create the jitter plot for the top 5 contributing factors
+ggplot(data = cleaned_data[cleaned_data$NUMBER.OF.PERSONS.INJURED + 
+                             cleaned_data$NUMBER.OF.PERSONS.KILLED > 0
+                           & cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% 
+                             c("Driver Inattention/Distraction",
+                                "Failure to Yield Right-of-Way",
+                                "Following Too Closely",
+                                "Other Vehicular",
+                                "Passing Too Closely"),]) +
   aes(x = CONTRIBUTING.FACTOR.VEHICLE.1,
       y = NUMBER.OF.PERSONS.INJURED + NUMBER.OF.PERSONS.KILLED,
       alpha = I(1/5),
@@ -465,11 +523,12 @@ ggplot(data = cleaned_data[cleaned_data$NUMBER.OF.PERSONS.INJURED + cleaned_data
 
 ```
 
-The jitter plot shows the number of people injured or killed in crashes caused by the top 5 factors. The plot shows that the most common contributing factors to crashes are also correlated with more violent crashes. Driver inattention or distraction caused the most violent crashes. This plot gives more insight into how different contributing factors of crashes relate to injuries and deaths.
+The jitter plot shows the number of people injured or killed in crashes caused by the top 5 factors. The plot shows that the most common contributing factors to crashes are also correlated with more violent crashes. Driver inattention or distraction caused the most violent crashes. This plot gives more insight into how different contributing factors of crashes relate to injuries and deaths. 
 
-### Plot 6:
+### Plot 6: 
 
 ```{r echo=FALSE}
+
 
 ```
 
@@ -542,9 +601,7 @@ The jitter plot shows the number of people injured or killed in crashes caused b
 
 ```
 
-## Interpretation
-
-UPDATE THIS INTERPRETATION
+TODO: update this modeling section with new code and interpretation of the results.
 
 ## Conclusion
 

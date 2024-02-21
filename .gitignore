@@ -62,8 +62,3 @@ rsconnect/
 .DS_Store
 .AppleDouble
 .LSOverride
-
-# data files
-*.csv
-*.xls
-data/
