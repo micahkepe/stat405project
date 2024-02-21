@@ -39,7 +39,9 @@ library(tensorflow)
 library(keras)
 # library(dplyr) 
 library(chron)
-
+library(reshape2)
+library(RColorBrewer)
+library(scales)
 ```
 
 ```{r, echo=FALSE}
@@ -229,7 +231,7 @@ par(old_par)
 
 ```
 
-Disregarding the unspecified contributing factors, the top 10 contributing factors to car crashes are: Driver Inattention/Distraction, Failure to Yield Right-of-Way, Following Too Closely, Fatigued/Drowsy, Backing Unsafely, Other Vehicular, Turning Improperly, Passing Too Closely, and Passing or Lane Usage Improper. The pie chart shows that the top contributing factor to car crashes is Driver Inattention/Distraction, which accounts for 40.4% of the observed car crashes.
+Disregarding the unspecified contributing factors, the top 5 contributing factors to car crashes are: Driver Inattention/Distraction, Failure to Yield Right-of-Way, Backing Unsafely, Following Too Closely, and Other Vehicular. The pie chart shows that the top contributing factor to car crashes is Driver Inattention/Distraction, which accounts for 52.9% of the observed car crashes.
 
 ### Plot 5: Top Specified Streets for Car Crashes in NYC
 
@@ -282,7 +284,7 @@ ggplot(cleaned_data, aes(x = LONGITUDE, y = LATITUDE)) +
        y = "Latitude") +
   geom_point(data = landmarks, aes(x = longitude, y = latitude), color = "red", size = 3, shape = 3) +
   theme_minimal() +
-  geom_text(data = landmarks, aes(x = longitude, y = latitude, label = name), vjust = -1, check_overlap = TRUE, color = "darkblue", size = 3)  # check_overlap to reduce label overlap
+  geom_text(data = landmarks, aes(x = longitude, y = latitude, label = name), vjust = -1, check_overlap = TRUE, color = "darkblue", size = 3)
 
 ```
 
@@ -322,22 +324,33 @@ ggplot(injury_data_long, aes(x = BOROUGH, y = Injuries, fill = Injury.Type)) +
 
 The boxplot of injuries in NYC by Borough shows the areas of NYC that have the most extreme number of injuries among pedestrians, cyclists, and motorists. The elevated numbers in certain boroughs are likely due to differences in borough population, amount of traffic, and the walkability and cyclabity of the area. The most dangerous boroughs for pedestrians in regards to car crashes is Manhattan, Brooklyn for cyclists, and Queens for motorists. This graph gives us a better understanding of the relationship between borough and injuries.
 
-### Plot 2: Correlation Heat Map
+### Plot 2: Point Plot of Injuries Counts Per Contributing Factor
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.height = 6, fig.width = 7}
 
-theme_set(theme_classic())
+factors <- cleaned_data[cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
+                                                                         "Failure to Yield Right-of-Way",
+                                                                         "Backing Unsafely",
+                                                                         "Following Too Closely",
+                                                                         "Other Vehicular"), ]
 
-# Correlation Heat Map
-corr <- abs(cor(cleaned_data[sapply(cleaned_data, is.numeric)]))
-matrix <- melt(corr)
-ggplot(matrix, aes(x = Var1, y = Var2, fill = value)) +
-  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1)) +
-  xlab("") + ylab("") + ggtitle("Correlation Heat Map") +
-  theme(axis.text=element_text(size=7)) +
-  geom_tile()
+# Create the plot
+ggplot(data = factors, aes(x = CONTRIBUTING.FACTOR.VEHICLE.1, y = NUMBER.OF.PERSONS.INJURED)) +
+  geom_point(aes(color = CONTRIBUTING.FACTOR.VEHICLE.1), size = 3) +
+  scale_color_brewer(palette = "Set1") +
+  labs(title = "Injuries Related to Contributing Factors in Vehicle Crashes",
+       x = "Contributing Factor",
+       y = "Number of Persons Injured",
+       color = "Factor") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom",
+        legend.text = element_text(size = 6))
 
 ```
+
+The point plot shows the number of injuries per contributing factor, illustrating that driver inattention/distraction result in more frequent instances of high injury crashes. This graph gives us a better understanding of the relationship between contributing factor and injury outcomes.
 
 ### Plot 3: Scatterplot of Top 3 Contributing Factors by Time of Day
 
@@ -346,7 +359,7 @@ ggplot(matrix, aes(x = Var1, y = Var2, fill = value)) +
 top_factors <- cleaned_data %>%
   filter(CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
                                               "Failure to Yield Right-of-Way",
-                                              "Following Too Closely"))
+                                              "Backing Unsafely"))
 
 # Create a new column for hour of the day from CRASH.TIME
 top_factors <- top_factors %>%
@@ -365,25 +378,94 @@ ggplot(factor_by_hour, aes(x = HOUR, y = Count, color = CONTRIBUTING.FACTOR.VEHI
        y = "Number of Crashes",
        color = "Contributing Factor") +
   theme_minimal() +
-  theme(legend.position = "bottom") +
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 6),
+        plot.title = element_text(hjust = 0.5)) +
   scale_x_continuous(breaks = 0:23)
 
 ```
+
 The scatter plot of the top 3 contributing factors by time of day shows the times that result in the most crashes in accordance to their contributing factor. What can be seen is that the hours to and from work result in the most crashes, such as 8 am and 5 pm. All contributing factors show that the crash amount increases between the hours of 8 am and 5 pm and decreases outside of those hours. This graph gives us a better understanding of the relationship between time of day, number of crashes, and contributing factors.
 
-### Plot 4:
+### Plot 4: Stack Area Plot of Contributing Factors and Crash Count by Year
 
 ```{r echo=FALSE}
+# Assuming 'cleaned_data' is your data frame and already loaded
+plot_data <- cleaned_data
 
+# Convert 'CRASH.DATE' to Year
+plot_data$YEAR <- as.numeric(format(as.Date(plot_data$CRASH.DATE, "%m/%d/%Y"), "%Y"))
+
+# Remove 'Unspecified' from contributing factors
+plot_data <- subset(plot_data, CONTRIBUTING.FACTOR.VEHICLE.1 != "Unspecified" & CONTRIBUTING.FACTOR.VEHICLE.1 != "")
+
+# Aggregate data by YEAR and CONTRIBUTING FACTOR
+agg_data <- aggregate(cbind(COUNT = plot_data$COLLISION_ID) ~ YEAR + CONTRIBUTING.FACTOR.VEHICLE.1, data=plot_data, FUN=length)
+
+# Find the top 5 contributing factors based on the overall count
+top_factors <- aggregate(COUNT ~ CONTRIBUTING.FACTOR.VEHICLE.1, data=agg_data, FUN=sum)
+top_factors <- top_factors[order(-top_factors$COUNT), ]
+top_factors <- head(top_factors$CONTRIBUTING.FACTOR.VEHICLE.1, 5)
+
+# Filter the aggregated data to include only the top 5 factors
+agg_data <- agg_data[agg_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% top_factors, ]
+
+# Create a color palette
+num_factors <- length(top_factors)
+colors <- colorRampPalette(brewer.pal(min(num_factors, 9), "Set1"))(num_factors)
+
+# Create the stacked area plot for the top 5 factors with the requested adjustments
+plot <- ggplot(agg_data, aes(x = YEAR, y = COUNT, fill = CONTRIBUTING.FACTOR.VEHICLE.1)) +
+  geom_area(position = 'stack') +
+  scale_fill_manual(values = colors) +
+  labs(title = "Trends of Top 5 Contributing Factors to Crashes Over Time",
+       x = "Year",
+       y = "Number of Crashes",
+       fill = "Contributing Factor") +
+  theme_minimal() +
+  theme(axis.title = element_text(size = 12),
+        plot.title = element_text(size = 12, hjust = 0.5),
+        legend.position = "right",
+        legend.title = element_text(size = 8),
+        legend.text = element_text(size = 6),
+        legend.key.size = unit(0.5, "cm"),
+        legend.margin = margin(0, 0, 0, 0),
+        panel.grid.major = element_line(colour = "grey"),
+        panel.grid.minor = element_line(colour = "lightgrey"),
+        panel.background = element_rect(fill = "white")) +
+  scale_x_continuous(breaks = seq(min(agg_data$YEAR), max(agg_data$YEAR), by = 2))
+
+# Print the plot
+print(plot)
+```
+
+The stacked area plot of the top 5 contributing factors to car crashes by year shows how the top contributing factors changed over the years. What can be seen is that the number of crashes peaked in 2018 at around 67500 crashes and that driver inattention/distraction grew rapidly from 2012 to 2018. Then, all contributing factors started to decrease 2020 to 2024 most likely due to covid and stay at home orders. This graph gives us a better understanding of the relationship between the year, number of crashes, and contributing factors.
+
+### Plot 5: Jitter Plot of Fatalities and Injuries by Contributing Factor
+
+```{r echo=FALSE}
+ggplot(data = cleaned_data[cleaned_data$NUMBER.OF.PERSONS.INJURED + cleaned_data$NUMBER.OF.PERSONS.KILLED > 0
+                           & cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
+                                                                                "Failure to Yield Right-of-Way",
+                                                                                "Following Too Closely",
+                                                                                "Other Vehicular",
+                                                                                "Passing Too Closely"),]) +
+  aes(x = CONTRIBUTING.FACTOR.VEHICLE.1,
+      y = NUMBER.OF.PERSONS.INJURED + NUMBER.OF.PERSONS.KILLED,
+      alpha = I(1/5),
+      color = CONTRIBUTING.FACTOR.VEHICLE.1) +
+  geom_jitter() + coord_flip() +
+  theme(axis.text.y = element_text(angle = 30, hjust = 0.5, vjust = 0.5),
+        axis.title.y = element_text(vjust=2.5),
+        plot.title = element_text(size = 10),
+        legend.position = "none") +
+  labs(title = "Number of People Injured or Killed in Crashes Caused by Top Factors",
+       y = "Number of People Injured or Killed",
+       x = "Contributing Factors")
 
 ```
 
-### Plot 5:
-
-```{r echo=FALSE}
-
-
-```
+The jitter plot shows the number of people injured or killed in crashes caused by the top 5 factors. The plot shows that the most common contributing factors to crashes are also correlated with more violent crashes. Driver inattention or distraction caused the most violent crashes. This plot gives more insight into how different contributing factors of crashes relate to injuries and deaths.
 
 ### Plot 6:
 
@@ -459,6 +541,10 @@ The scatter plot of the top 3 contributing factors by time of day shows the time
 # print(evalution)
 
 ```
+
+## Interpretation
+
+UPDATE THIS INTERPRETATION
 
 ## Conclusion
 
