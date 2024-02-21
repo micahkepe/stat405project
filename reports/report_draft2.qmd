@@ -31,7 +31,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Load required libraries
 library(reshape2)
-library(tidyverse)
+# library(tidyverse) # Commented out until next report
 library(lubridate)
 library(ggplot2)
 library(plotly)
