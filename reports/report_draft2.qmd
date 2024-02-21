@@ -310,21 +310,25 @@ The heat map of car crashes in NYC shows that the highest density of car crashes
 
 ```{r echo=FALSE}
 
-# Gathering data to long format for easier plotting
-injury_data_long <- cleaned_data %>%
-  select(BOROUGH, NUMBER.OF.PEDESTRIANS.INJURED, 
-         NUMBER.OF.CYCLIST.INJURED, NUMBER.OF.MOTORIST.INJURED) %>%
-  pivot_longer(cols = starts_with("NUMBER.OF"), 
-               names_to = "Injury.Type", 
-               values_to = "Injuries") %>%
-  mutate(Injury.Type = factor(Injury.Type, 
-                              levels = c("NUMBER.OF.PEDESTRIANS.INJURED", 
-                                         "NUMBER.OF.CYCLIST.INJURED", 
-                                         "NUMBER.OF.MOTORIST.INJURED"),
-                              labels = c("Pedestrians", 
-                                         "Cyclists", 
-                                         "Motorists")))
+# Select the relevant columns for the plot
+selected_data <- cleaned_data[, c("BOROUGH", "NUMBER.OF.PEDESTRIANS.INJURED", 
+                                  "NUMBER.OF.CYCLIST.INJURED", 
+                                  "NUMBER.OF.MOTORIST.INJURED")]
 
+# Convert selected data to long format using reshape2 package
+injury_data_long <- melt(selected_data, id.vars = "BOROUGH",
+                         variable.name = "Injury.Type", value.name = "Injuries")
+
+# Manually adjust the Injury.Type to more readable labels
+injury_data_long$Injury.Type <- factor(injury_data_long$Injury.Type,
+                                       levels = c("NUMBER.OF.PEDESTRIANS.INJURED", 
+                                                  "NUMBER.OF.CYCLIST.INJURED", 
+                                                  "NUMBER.OF.MOTORIST.INJURED"),
+                                       labels = c("Pedestrians", 
+                                                  "Cyclists", 
+                                                  "Motorists"))
+
+# Create the boxplot for injuries by group across NYC boroughs
 ggplot(injury_data_long, aes(x = BOROUGH, y = Injuries, fill = Injury.Type)) +
   geom_boxplot(outlier.colour = NA, outlier.shape = 1) +
   geom_point(position = position_dodge(width = 0.75), aes(color = Injury.Type)) +
@@ -335,16 +339,16 @@ ggplot(injury_data_long, aes(x = BOROUGH, y = Injuries, fill = Injury.Type)) +
                               "Cyclists"="green", 
                               "Motorists"="blue")) +
   facet_wrap(~ Injury.Type, scales = "fixed") +
-  labs(title = "Injuries by Group Across NYC Boroughs",
-       x = "Borough",
+  labs(title = "Injuries by Group Across NYC Boroughs", 
+       x = "Borough", 
        y = "Number of Injuries") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "bottom",
-        plot.title = element_text(size = 14),
+        plot.title = element_text(hjust = 0.5),
         axis.title = element_text(size = 12),
         legend.text = element_text(size = 10)) +
-  coord_cartesian(ylim = c(0, NA))
+  coord_cartesian(ylim = c(0, NA)) 
 
 ```
 
@@ -439,7 +443,8 @@ The scatter plot of the top 3 contributing factors by time of day shows the time
 ### Plot 4: Stack Area Plot of Contributing Factors and Crash Count by Year
 
 ```{r echo=FALSE}
-# Assuming 'cleaned_data' is your data frame and already loaded
+
+# Start with the cleaned data
 plot_data <- cleaned_data
 
 # Convert 'CRASH.DATE' to Year
@@ -468,7 +473,7 @@ num_factors <- length(top_factors)
 colors <- colorRampPalette(brewer.pal(min(num_factors, 9), "Set1"))(num_factors)
 
 # Create the stacked area plot for the top 5 factors with the requested adjustments
-plot <- ggplot(agg_data, aes(x = YEAR, y = COUNT, 
+ggplot(agg_data, aes(x = YEAR, y = COUNT, 
                              fill = CONTRIBUTING.FACTOR.VEHICLE.1)) +
   geom_area(position = 'stack') +
   scale_fill_manual(values = colors) +
@@ -489,8 +494,6 @@ plot <- ggplot(agg_data, aes(x = YEAR, y = COUNT,
         panel.background = element_rect(fill = "white")) +
   scale_x_continuous(breaks = seq(min(agg_data$YEAR), max(agg_data$YEAR), by = 2))
 
-# Print the plot
-print(plot)
 ```
 
 The stacked area plot of the top 5 contributing factors to car crashes by year shows how the top contributing factors changed over the years. What can be seen is that the number of crashes peaked in 2018 at around 67500 crashes and that driver inattention/distraction grew rapidly from 2012 to 2018. Then, all contributing factors started to decrease 2020 to 2024 most likely due to covid and stay at home orders. This graph gives us a better understanding of the relationship between the year, number of crashes, and contributing factors.
@@ -525,79 +528,67 @@ ggplot(data = cleaned_data[cleaned_data$NUMBER.OF.PERSONS.INJURED +
 
 The jitter plot shows the number of people injured or killed in crashes caused by the top 5 factors. The plot shows that the most common contributing factors to crashes are also correlated with more violent crashes. Driver inattention or distraction caused the most violent crashes. This plot gives more insight into how different contributing factors of crashes relate to injuries and deaths. 
 
-### Plot 6: 
+### Plot 6: Temporal Density Map by Both Day of Week and Hour of Day
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.height = 8, fig.width = 10}
 
+# Start with the cleaned data
+analysis_data <- cleaned_data
+
+# Directly extract day of the week from CRASH.DATE
+analysis_data$DayOfWeek <- weekdays(analysis_data$CRASH.DATE)
+
+# Extract the hour of the day from CRASH.TIME
+analysis_data$HourOfDay <- substr(analysis_data$CRASH.TIME, 1, 2)
+
+# Create a table for the plot
+heatmap_data <- table(analysis_data$DayOfWeek, analysis_data$HourOfDay)
+
+# Transform the table into a data frame for ggplot
+heatmap_df <- as.data.frame(heatmap_data)
+names(heatmap_df) <- c("DayOfWeek", "HourOfDay", "Frequency")
+
+# Ensure DayOfWeek is an ordered factor to maintain the day order
+heatmap_df$DayOfWeek <- factor(heatmap_df$DayOfWeek, 
+                               levels = c("Sunday", 
+                                          "Monday", 
+                                          "Tuesday", 
+                                          "Wednesday", 
+                                          "Thursday", 
+                                          "Friday", 
+                                          "Saturday"))
+
+# Plotting the map
+ggplot(heatmap_df, aes(x = HourOfDay, y = DayOfWeek, fill = Frequency)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(title = "Heatmap of Crashes by Day of Week and Hour of Day", 
+       x = "Hour of Day", 
+       y = "Day of Week", 
+       fill = "Crash Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
 
 ```
+
+The temporal density map shows the frequency of car crashes by day of the week and hour of the day. There is an evident "safe zone" on weekdays between the hours of 1:00AM and 5:00AM. This is expected as these are not usually times where there are lots of people active. Interesting, "danger zones" are evident on weekdays between the hours of 8:00AM and 10:00AM and 4:00PM and 6:00PM. On possible explanation for this is that these are the hours when people are driving to and from work. This graph dispels the myth that most car crashes occur at night and shows that most car crashes actually occur during the day. This insight is crucial for eliminating preconceived notions about car crashes and understanding the true patterns of car crashes.
 
 ## Modeling: Neural Network
 
 ```{r echo=FALSE}
 
-# ATTEMPTED CODE FOR NEURAL NETWORK MODEL (TODO: FIX AND UPDATE)
-# # Further data cleaning and pre-processing for the neural network model
-# nn_data <- cleaned_data %>%
-#   select(NUMBER.OF.PERSONS.INJURED, CRASH.TIME, BOROUGH, CONTRIBUTING.FACTOR.VEHICLE.1) %>%
-#   mutate(
-#     HOUR = as.numeric(substr(CRASH.TIME, 1, 2)),
-#     BOROUGH = as.factor(BOROUGH),
-#     CONTRIBUTING.FACTOR.VEHICLE.1 = as.factor(CONTRIBUTING.FACTOR.VEHICLE.1)
-#   ) %>%
-#   na.omit() # Ensure no NA values
-# 
-# # one-hot encoding categorical variables
-# nn_data <- cleaned_data %>%
-#   select(NUMBER.OF.PERSONS.INJURED, CRASH.TIME, BOROUGH, CONTRIBUTING.FACTOR.VEHICLE.1) %>%
-#   mutate(HOUR = as.numeric(substr(CRASH.TIME, 1, 2))) %>%
-#   na.omit()
-# 
-# # Convert factors to dummy variables
-# nn_data_transformed <- model.matrix(~ HOUR + BOROUGH + CONTRIBUTING.FACTOR.VEHICLE.1 - 1, data = nn_data)
-# 
-# nn_target <- nn_data$NUMBER.OF.PERSONS.INJURED
-# 
-# # Now, when you sample indices for training, ensure both x_train/x_test and y_train/y_test are correctly assigned
-# train_indices <- sample(1:nrow(nn_data_transformed), 0.8 * nrow(nn_data_transformed))
-# x_train <- nn_data_transformed[train_indices, ]
-# y_train <- nn_target[train_indices]  # Ensure this is capturing the correct subset
-# x_test <- nn_data_transformed[-train_indices, ]
-# y_test <- nn_target[-train_indices]  # Ditto for y_test
-# 
-# # Verify the dimensions and presence of the target data
-# print(dim(x_train))
-# print(length(y_train))  # Use length for a 1D vector like y_train
-# 
-# num_features <- ncol(x_train)
-# print(paste("Number of features:", num_features))
-# 
-# # Create the neural network model
-# model <- keras_model_sequential() %>%
-#   layer_dense(units = 1, input_shape = c(num_features)) # simple linear regression model
-# 
-# # Compile the model
-# model %>% compile(
-#   optimizer = "adam",
-#   loss = "mean_squared_error",
-#   metrics = c("mean_absolute_error")
-# )
-# 
-# # Train the model
-# history <- model %>% fit(
-#   x_train, y_train,
-#   epochs = 10, # adjust as needed
-#   batch_size = 32,
-#   validation_data = list(x_test, y_test),
-#   verbose = 2
-# )
-# 
-# # Plot the training history
-# plot(history)
-# 
-# # Evaluate the model
-# evalution <- model %>% evaluate(x_test, y_test)
-# print(evalution)
+# Load secondary data sets
+# data_people <- read.csv("../data/Motor_Vehicle_Collisions_-_Person_20240221.csv")
+# data_vehicles <- read.csv("../data/Motor_Vehicle_Collisions_-_Vehicles_20240221.csv")
+
+```
+
+```{r echo=FALSE}
+
+# TODO: Add code for modeling
+
+
 
 ```
 
