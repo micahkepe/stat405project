@@ -20,14 +20,10 @@ knitr::opts_chunk$set(echo = TRUE)
 # Install packages if not already installed
 # install.packages("tidyverse")
 # install.packages("plotly")
-# install.packages("keras")
 # install.packages("chron")
 # install.packages("reshape2")
-
-# TensorFlow installation
-# install.packages("remotes")
-# remotes::install_github("rstudio/tensorflow")
-# install_tensorflow(envname = "r-tensorflow")
+# install.packages("rpart")
+# install.packages("rpart.plot")
 
 # Load required libraries
 library(reshape2)
@@ -35,12 +31,12 @@ library(reshape2)
 library(lubridate)
 library(ggplot2)
 library(plotly)
-library(tensorflow)
-library(keras)
 library(chron)
 library(reshape2)
 library(RColorBrewer)
 library(scales)
+library(rpart)
+library(rpart.plot)
 
 ```
 
@@ -217,7 +213,7 @@ The line graph of deaths in car crashes per year shows that the number of deaths
 
 ### Plot 4: Pie Chart of Contributing Factors to Car Crashes
 
-```{r echo=FALSE}
+```{r echo=FALSE fig.margin=0.5}
 
 # Adjust global graphics parameters to reduce text size
 old_par <- par(cex=0.8)
@@ -574,26 +570,97 @@ ggplot(heatmap_df, aes(x = HourOfDay, y = DayOfWeek, fill = Frequency)) +
 
 The temporal density map shows the frequency of car crashes by day of the week and hour of the day. There is an evident "safe zone" on weekdays between the hours of 1:00AM and 5:00AM. This is expected as these are not usually times where there are lots of people active. Interesting, "danger zones" are evident on weekdays between the hours of 8:00AM and 10:00AM and 4:00PM and 6:00PM. On possible explanation for this is that these are the hours when people are driving to and from work. This graph dispels the myth that most car crashes occur at night and shows that most car crashes actually occur during the day. This insight is crucial for eliminating preconceived notions about car crashes and understanding the true patterns of car crashes.
 
-## Modeling: Neural Network
+<!-- ## Modeling: Decision Tree -->
 
-```{r echo=FALSE}
+<!-- ```{r echo=FALSE} -->
 
-# Load secondary data sets
-# data_people <- read.csv("../data/Motor_Vehicle_Collisions_-_Person_20240221.csv")
-# data_vehicles <- read.csv("../data/Motor_Vehicle_Collisions_-_Vehicles_20240221.csv")
+<!-- # Load secondary data set of people involved in car crashes -->
+<!-- data_people <- read.csv("../data/Motor_Vehicle_Collisions_-_Person_20240221.csv") -->
 
-```
+<!-- # Merge the two data sets on the common key COLLISION_ID -->
+<!-- merged_data <- merge(cleaned_data, data_people, by = "COLLISION_ID") -->
 
-```{r echo=FALSE}
+<!-- ``` -->
 
-# TODO: Add code for modeling
+<!-- ```{r echo=FALSE fig.height=10, fig.width=8} -->
 
+<!-- # Prepare the data for modeling -->
+<!-- model_data <- merged_data[, c("BOROUGH", "LATITUDE", "LONGITUDE",  -->
+<!--                               "CONTRIBUTING.FACTOR.VEHICLE.1",  -->
+<!--                               "NUMBER.OF.PERSONS.KILLED",  -->
+<!--                               "PERSON_TYPE")] -->
 
+<!-- # Ensure that the target variable is numeric -->
+<!-- model_data$NUMBER.OF.PERSONS.KILLED <- as.numeric(model_data$NUMBER.OF.PERSONS.KILLED) -->
 
-```
+<!-- # Abbreviate the contributing factor column for easier reading -->
+<!-- # Create named vector of abbreviated labels -->
+<!-- factor_abbreviations <- setNames(c("Driver Inattention/Distraction" = "Inattention", -->
+<!--                                    "Failure to Yield Right-of-Way" = "Failure to Yield", -->
+<!--                                    "Backing Unsafely" = "Backing", -->
+<!--                                    "Following Too Closely" = "Following Closely", -->
+<!--                                    "Other Vehicular" = "Other"),  -->
+<!--                                  c("Driver Inattention/Distraction", -->
+<!--                                    "Failure to Yield Right-of-Way", -->
+<!--                                    "Backing Unsafely", -->
+<!--                                    "Following Too Closely", -->
+<!--                                    "Other Vehicular")) -->
 
-TODO: update this modeling section with new code and interpretation of the results.
+<!-- # Define a function to abbreviate the contributing factor labels -->
+<!-- abbreviate_factors <- function(x, abbreviations) { -->
+<!--   sapply(x, function(value) { -->
+<!--     if (value %in% names(abbreviations)) { -->
+<!--       return(abbreviations[value]) -->
+<!--     } else { -->
+<!--       return(abbreviate(value, minlength = 20))  # Fall back to automatic abbreviation -->
+<!--     } -->
+<!--   }) -->
+<!-- } -->
+
+<!-- model_data$CONTRIBUTING.FACTOR.VEHICLE.1.ABBR <- abbreviate_factors(model_data$CONTRIBUTING.FACTOR.VEHICLE.1, factor_abbreviations) -->
+
+<!-- # Convert categorical variables to factors -->
+<!-- model_data$BOROUGH <- as.factor(model_data$BOROUGH) -->
+<!-- model_data$PERSON_TYPE <- as.factor(model_data$PERSON_TYPE) -->
+<!-- model_data$CONTRIBUTING.FACTOR.VEHICLE.1.ABBR <- as.factor(model_data$CONTRIBUTING.FACTOR.VEHICLE.1.ABBR) -->
+
+<!-- # Remove rows with NAs in any column -->
+<!-- model_data <- na.omit(model_data) -->
+
+<!-- # Split the data into training and testing sets -->
+<!-- set.seed(123) -->
+<!-- train_indices <- sample(1:nrow(model_data), 0.7 * nrow(model_data)) -->
+<!-- train_data <- model_data[train_indices, ] -->
+<!-- test_data <- model_data[-train_indices, ] -->
+
+<!-- # Train a decision tree model w/ abbreviated contributing factors -->
+<!-- tree_model <- rpart(NUMBER.OF.PERSONS.KILLED ~ BOROUGH + LATITUDE + LONGITUDE + CONTRIBUTING.FACTOR.VEHICLE.1.ABBR + PERSON_TYPE,  -->
+<!--                     data = train_data,  -->
+<!--                     method = "anova", -->
+<!--                     control = rpart.control(maxdepth = 3 , minsplit = 10, cp = 0.001)) -->
+
+<!-- # Make predictions on the test set -->
+<!-- predictions <- predict(tree_model, test_data) -->
+
+<!-- # Calculate MAE -->
+<!-- mae <- mean(abs(predictions - test_data$NUMBER.OF.PERSONS.KILLED)) -->
+<!-- cat("Mean Absolute Error (MAE):", mae, "\n") -->
+
+<!-- # Visualize the decision tree (adjust to make more readable) -->
+<!-- rpart.plot(tree_model,  -->
+<!--            type = 4,  -->
+<!--            extra = 101,  -->
+<!--            under = TRUE,  -->
+<!--            fallen.leaves = TRUE,  -->
+<!--            compress = TRUE,  -->
+<!--            branch = 0.5,  -->
+<!--            box.palette = "RdBu", -->
+<!--            shadow.col = "gray", -->
+<!--            cex = 0.4) -->
+
+<!-- ``` -->
+
 
 ## Conclusion
 
-TODO: update this conclusion with new findings from the updated data analysis and modeling.
+In our further research since our previous report draft, we have gathered more insights into our data. Of note is the insight that most accidents actually occur within weekdays and during the day, not at night. We have also gathered insights into the contributing factors of car crashes and how they relate to injuries and fatalities. With the addition of NYC OpenData's secondary dataset of people involved in car crashes, we hope to uncover even more factors, trends, discoveries, etc. that will better guide our potential suggestions for the most meaningful and impactful changes to NYC's traffic safety.
