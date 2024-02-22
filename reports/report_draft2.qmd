@@ -213,7 +213,7 @@ The line graph of deaths in car crashes per year shows that the number of deaths
 
 ### Plot 4: Pie Chart of Contributing Factors to Car Crashes
 
-```{r echo=FALSE fig.margin=0.5}
+```{r echo=FALSE}
 
 # Adjust global graphics parameters to reduce text size
 old_par <- par(cex=0.8)
@@ -352,7 +352,7 @@ The boxplot of injuries in NYC by Borough shows the areas of NYC that have the m
 
 ### Plot 2: Point Plot of Injuries Counts Per Contributing Factor
 
-```{r echo=FALSE, fig.height = 6, fig.width = 7}
+```{r echo=FALSE}
 
 # Create a subset of data with only the top contributing factors
 factors <- cleaned_data[cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% 
@@ -526,7 +526,7 @@ The jitter plot shows the number of people injured or killed in crashes caused b
 
 ### Plot 6: Temporal Density Map by Both Day of Week and Hour of Day
 
-```{r echo=FALSE, fig.height = 8, fig.width = 10}
+```{r echo=FALSE}
 
 # Start with the cleaned data
 analysis_data <- cleaned_data
@@ -570,96 +570,77 @@ ggplot(heatmap_df, aes(x = HourOfDay, y = DayOfWeek, fill = Frequency)) +
 
 The temporal density map shows the frequency of car crashes by day of the week and hour of the day. There is an evident "safe zone" on weekdays between the hours of 1:00AM and 5:00AM. This is expected as these are not usually times where there are lots of people active. Interesting, "danger zones" are evident on weekdays between the hours of 8:00AM and 10:00AM and 4:00PM and 6:00PM. On possible explanation for this is that these are the hours when people are driving to and from work. This graph dispels the myth that most car crashes occur at night and shows that most car crashes actually occur during the day. This insight is crucial for eliminating preconceived notions about car crashes and understanding the true patterns of car crashes.
 
-<!-- ## Modeling: Decision Tree -->
+## Modeling: Decision Tree
 
-<!-- ```{r echo=FALSE} -->
+```{r echo=FALSE}
 
-<!-- # Load secondary data set of people involved in car crashes -->
-<!-- data_people <- read.csv("../data/Motor_Vehicle_Collisions_-_Person_20240221.csv") -->
+# Load secondary data set of people involved in car crashes
+data_people <- read.csv("../data/Motor_Vehicle_Collisions_-_Person_20240221.csv")
 
-<!-- # Merge the two data sets on the common key COLLISION_ID -->
-<!-- merged_data <- merge(cleaned_data, data_people, by = "COLLISION_ID") -->
+# Merge the two data sets on the common key COLLISION_ID
+merged_data <- merge(cleaned_data, data_people, by = "COLLISION_ID")
 
-<!-- ``` -->
+```
 
-<!-- ```{r echo=FALSE fig.height=10, fig.width=8} -->
+```{r echo=FALSE}
 
-<!-- # Prepare the data for modeling -->
-<!-- model_data <- merged_data[, c("BOROUGH", "LATITUDE", "LONGITUDE",  -->
-<!--                               "CONTRIBUTING.FACTOR.VEHICLE.1",  -->
-<!--                               "NUMBER.OF.PERSONS.KILLED",  -->
-<!--                               "PERSON_TYPE")] -->
+# Prepare the data for modeling
+model_data <- merged_data[, c("BOROUGH", "LATITUDE", "LONGITUDE",
+                              # "CONTRIBUTING.FACTOR.VEHICLE.1",
+                              "CRASH.TIME",
+                              "NUMBER.OF.PERSONS.KILLED",
+                              "PERSON_TYPE")]
 
-<!-- # Ensure that the target variable is numeric -->
-<!-- model_data$NUMBER.OF.PERSONS.KILLED <- as.numeric(model_data$NUMBER.OF.PERSONS.KILLED) -->
+# Ensure that the target variable is numeric
+model_data$NUMBER.OF.PERSONS.KILLED <- as.numeric(model_data$NUMBER.OF.PERSONS.KILLED)
 
-<!-- # Abbreviate the contributing factor column for easier reading -->
-<!-- # Create named vector of abbreviated labels -->
-<!-- factor_abbreviations <- setNames(c("Driver Inattention/Distraction" = "Inattention", -->
-<!--                                    "Failure to Yield Right-of-Way" = "Failure to Yield", -->
-<!--                                    "Backing Unsafely" = "Backing", -->
-<!--                                    "Following Too Closely" = "Following Closely", -->
-<!--                                    "Other Vehicular" = "Other"),  -->
-<!--                                  c("Driver Inattention/Distraction", -->
-<!--                                    "Failure to Yield Right-of-Way", -->
-<!--                                    "Backing Unsafely", -->
-<!--                                    "Following Too Closely", -->
-<!--                                    "Other Vehicular")) -->
+# Convert CRASH.TIME to numeric
+model_data$CRASH.TIME <- as.numeric(substr(model_data$CRASH.TIME, 1, 2))
 
-<!-- # Define a function to abbreviate the contributing factor labels -->
-<!-- abbreviate_factors <- function(x, abbreviations) { -->
-<!--   sapply(x, function(value) { -->
-<!--     if (value %in% names(abbreviations)) { -->
-<!--       return(abbreviations[value]) -->
-<!--     } else { -->
-<!--       return(abbreviate(value, minlength = 20))  # Fall back to automatic abbreviation -->
-<!--     } -->
-<!--   }) -->
-<!-- } -->
+# Normalize the numeric variables
+numeroc_vars <- c("LATITUDE", "LONGITUDE", "CRASH.TIME")
+model_data[numeroc_vars] <- lapply(model_data[numeroc_vars], function(x) (x - min(x)) / (max(x) - min(x)))
 
-<!-- model_data$CONTRIBUTING.FACTOR.VEHICLE.1.ABBR <- abbreviate_factors(model_data$CONTRIBUTING.FACTOR.VEHICLE.1, factor_abbreviations) -->
+# Convert categorical variables to factors
+model_data$BOROUGH <- as.factor(model_data$BOROUGH)
+model_data$PERSON_TYPE <- as.factor(model_data$PERSON_TYPE)
 
-<!-- # Convert categorical variables to factors -->
-<!-- model_data$BOROUGH <- as.factor(model_data$BOROUGH) -->
-<!-- model_data$PERSON_TYPE <- as.factor(model_data$PERSON_TYPE) -->
-<!-- model_data$CONTRIBUTING.FACTOR.VEHICLE.1.ABBR <- as.factor(model_data$CONTRIBUTING.FACTOR.VEHICLE.1.ABBR) -->
+# Remove rows with NAs in any column
+model_data <- na.omit(model_data)
 
-<!-- # Remove rows with NAs in any column -->
-<!-- model_data <- na.omit(model_data) -->
+# Split the data into training and testing sets
+set.seed(123)
+train_indices <- sample(1:nrow(model_data), 0.7 * nrow(model_data))
+train_data <- model_data[train_indices, ]
+test_data <- model_data[-train_indices, ]
 
-<!-- # Split the data into training and testing sets -->
-<!-- set.seed(123) -->
-<!-- train_indices <- sample(1:nrow(model_data), 0.7 * nrow(model_data)) -->
-<!-- train_data <- model_data[train_indices, ] -->
-<!-- test_data <- model_data[-train_indices, ] -->
+# Train a decision tree model w/ abbreviated contributing factors
+tree_model <- rpart(NUMBER.OF.PERSONS.KILLED ~ .,
+                    data = train_data,
+                    method = "anova",
+                    control = rpart.control(maxdepth = 3 , minsplit = 10, cp = 0.001))
 
-<!-- # Train a decision tree model w/ abbreviated contributing factors -->
-<!-- tree_model <- rpart(NUMBER.OF.PERSONS.KILLED ~ BOROUGH + LATITUDE + LONGITUDE + CONTRIBUTING.FACTOR.VEHICLE.1.ABBR + PERSON_TYPE,  -->
-<!--                     data = train_data,  -->
-<!--                     method = "anova", -->
-<!--                     control = rpart.control(maxdepth = 3 , minsplit = 10, cp = 0.001)) -->
+# Make predictions on the test set
+predictions <- predict(tree_model, test_data)
 
-<!-- # Make predictions on the test set -->
-<!-- predictions <- predict(tree_model, test_data) -->
+# Calculate MAE
+mae <- mean(abs(predictions - test_data$NUMBER.OF.PERSONS.KILLED))
+print(paste("Mean Absolute Error (MAE):", mae))
 
-<!-- # Calculate MAE -->
-<!-- mae <- mean(abs(predictions - test_data$NUMBER.OF.PERSONS.KILLED)) -->
-<!-- cat("Mean Absolute Error (MAE):", mae, "\n") -->
+# Visualize the decision tree (adjust to make more readable)
+rpart.plot(tree_model,
+           type = 4,
+           extra = 101,
+           under = TRUE,
+           fallen.leaves = TRUE,
+           compress = TRUE,
+           branch = 0.5,
+           box.palette = "RdBu",
+           shadow.col = "gray",
+           cex = 0.8)
 
-<!-- # Visualize the decision tree (adjust to make more readable) -->
-<!-- rpart.plot(tree_model,  -->
-<!--            type = 4,  -->
-<!--            extra = 101,  -->
-<!--            under = TRUE,  -->
-<!--            fallen.leaves = TRUE,  -->
-<!--            compress = TRUE,  -->
-<!--            branch = 0.5,  -->
-<!--            box.palette = "RdBu", -->
-<!--            shadow.col = "gray", -->
-<!--            cex = 0.4) -->
-
-<!-- ``` -->
-
+```
+The decision tree model was trained to predict the number of people killed in car crashes based on the following features: BOROUGH, LATITUDE, LONGITUDE, CRASH.TIME, and PERSON_TYPE. The model was trained on 70% of the data and tested on the remaining 30%. The mean absolute error (MAE) of the model was calculated to be 0.00417116746503942. The decision tree model is visualized above. The model only has a maximum depth of 3, but it is a good starting point for predicting the number of people killed in car crashes. The model could be improved by using more features and more data.
 
 ## Conclusion
 
