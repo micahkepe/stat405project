@@ -49,9 +49,9 @@ data <- read.csv("../data/Motor_Vehicle_Collisions_-_Crashes_20240213.csv")
 
 ## Introduction
 
-The NYC OpenData dataset contains details of motor vehicle collision occurrences reported by the NYPD from 2012 to 2024. Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage. 
+The NYC OpenData dataset contains details of motor vehicle collision occurrences reported by the NYPD from 2012 to 2024. Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage.
 
-Car crashes in the United States represent a significant public health concern, with over 42,900 deaths involving over 61,000 vehicles in 2020 according to the Insurance Institute for Highway Safety. The economic impact of car crashes is also substantial, with an estimated cost of $340 billion in 2019 via the National Highway Traffic Safety Administration.
+Car crashes in the United States represent a significant public health concern, with over 42,900 deaths involving over 61,000 vehicles in 2020 according to the Insurance Institute for Highway Safety. The economic impact of car crashes is also substantial, with an estimated cost of \$340 billion in 2019 via the National Highway Traffic Safety Administration. Not only does preventing car crashes save lives, but it also saves money and resources.
 
 Our project seeks to determine the most important factors that contribute to potentially fatal accidents. By analyzing the data, we hope to identify to provide recommendations for reducing the number of accidents.
 
@@ -59,7 +59,7 @@ Our project seeks to determine the most important factors that contribute to pot
 
 The data set contains over 2 million records, each detailing a motor vehicle collision. The data includes the date, time, location (latitude, longitude, borough), and the number of individuals affected (injured or killed) among drivers, pedestrians, and cyclists. The data set also includes information about the vehicles involved, such as the type of vehicle and the contributing factors to the crash. Our analysis will focus on understanding patterns and trends within these incidents, and identifying the most important factors that contribute to potentially fatal accidents.
 
-## Data Cleaning
+## Data Cleaning and Pre-Processing
 
 ```{r echo=FALSE}
 
@@ -213,7 +213,7 @@ The line graph of deaths in car crashes per year shows that the number of deaths
 
 ### Plot 4: Pie Chart of Contributing Factors to Car Crashes
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=10, fig.height=6}
 
 # Adjust global graphics parameters to reduce text size
 old_par <- par(cex=0.8)
@@ -239,7 +239,7 @@ par(old_par)
 
 ```
 
-Disregarding the unspecified contributing factors, the top 5 contributing factors to car crashes are: Driver Inattention/Distraction, Failure to Yield Right-of-Way, Backing Unsafely, Following Too Closely, and Other Vehicular. The pie chart shows that the top contributing factor to car crashes is Driver Inattention/Distraction, which accounts for 52.9% of the observed car crashes.
+Disregarding the unspecified contributing factors, the top 5 contributing factors to car crashes are: Driver Inattention/Distraction, Failure to Yield Right-of-Way, Backing Unsafely, Following Too Closely, and Other Vehicular. The pie chart shows that the top specified contributing factor to car crashes is Driver Inattention/Distraction, which accounts for 52.9% of the observed car crashes. However, an important consideration is that a large amount of the contributing factors are unspecified, which could affect the accuracy of the data.
 
 ### Plot 5: Top Specified Streets for Car Crashes in NYC
 
@@ -304,7 +304,7 @@ The heat map of car crashes in NYC shows that the highest density of car crashes
 
 ### Plot 1: Boxplot of Injuries by NYC Boroughs
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=10, fig.height=8}
 
 # Select the relevant columns for the plot
 selected_data <- cleaned_data[, c("BOROUGH", "NUMBER.OF.PEDESTRIANS.INJURED", 
@@ -352,7 +352,7 @@ The boxplot of injuries in NYC by Borough shows the areas of NYC that have the m
 
 ### Plot 2: Point Plot of Injuries Counts Per Contributing Factor
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=10, fig.height=8}
 
 # Create a subset of data with only the top contributing factors
 factors <- cleaned_data[cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% 
@@ -365,6 +365,7 @@ factors <- cleaned_data[cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in%
 # Create the point plot for the top contributing factors
 ggplot(data = factors, aes(x = CONTRIBUTING.FACTOR.VEHICLE.1, 
                            y = NUMBER.OF.PERSONS.INJURED)) +
+  aes(alpha = I(1/5)) +
   geom_point(aes(color = CONTRIBUTING.FACTOR.VEHICLE.1), size = 3) +
   scale_color_brewer(palette = "Set1") +
   labs(title = "Injuries Related to Contributing Factors in Vehicle Crashes",
@@ -383,7 +384,7 @@ The point plot shows the number of injuries per contributing factor, illustratin
 
 ### Plot 3: Scatterplot of Top 3 Contributing Factors by Time of Day
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=10, fig.height=6}
 
 # Create a subset of data with only the top contributing factors
 top_factors_indices <- cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% 
@@ -522,17 +523,17 @@ ggplot(data = cleaned_data[cleaned_data$NUMBER.OF.PERSONS.INJURED +
 
 ```
 
-The jitter plot shows the number of people injured or killed in crashes caused by the top 5 factors. The plot shows that the most common contributing factors to crashes are also correlated with more violent crashes. Driver inattention or distraction caused the most violent crashes. This plot gives more insight into how different contributing factors of crashes relate to injuries and deaths. 
+The jitter plot shows the number of people injured or killed in crashes caused by the top 5 factors. The plot shows that the most common contributing factors to crashes are also correlated with more violent crashes. Driver inattention or distraction caused the most violent crashes. This plot gives more insight into how different contributing factors of crashes relate to injuries and deaths.
 
 ### Plot 6: Temporal Density Map by Both Day of Week and Hour of Day
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=10, fig.height=8}
 
 # Start with the cleaned data
 analysis_data <- cleaned_data
 
 # Directly extract day of the week from CRASH.DATE
-analysis_data$DayOfWeek <- weekdays(analysis_data$CRASH.DATE)
+analysis_data$DayOfWeek <- weekdays(analysis_data$CRASH.DATE, abbreviate = FALSE)
 
 # Extract the hour of the day from CRASH.TIME
 analysis_data$HourOfDay <- substr(analysis_data$CRASH.TIME, 1, 2)
@@ -582,12 +583,12 @@ merged_data <- merge(cleaned_data, data_people, by = "COLLISION_ID")
 
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=12, fig.height=10}
 
 # Prepare the data for modeling
-model_data <- merged_data[, c("BOROUGH", "LATITUDE", "LONGITUDE",
-                              # "CONTRIBUTING.FACTOR.VEHICLE.1",
+model_data <- merged_data[, c("BOROUGH", 
                               "CRASH.TIME",
+                              "PERSON_AGE",
                               "NUMBER.OF.PERSONS.KILLED",
                               "PERSON_TYPE")]
 
@@ -597,9 +598,8 @@ model_data$NUMBER.OF.PERSONS.KILLED <- as.numeric(model_data$NUMBER.OF.PERSONS.K
 # Convert CRASH.TIME to numeric
 model_data$CRASH.TIME <- as.numeric(substr(model_data$CRASH.TIME, 1, 2))
 
-# Normalize the numeric variables
-numeroc_vars <- c("LATITUDE", "LONGITUDE", "CRASH.TIME")
-model_data[numeroc_vars] <- lapply(model_data[numeroc_vars], function(x) (x - min(x)) / (max(x) - min(x)))
+# Convert personal age to numeric
+model_data$PERSON_AGE <- as.numeric(model_data$PERSON_AGE)
 
 # Convert categorical variables to factors
 model_data$BOROUGH <- as.factor(model_data$BOROUGH)
@@ -618,7 +618,7 @@ test_data <- model_data[-train_indices, ]
 tree_model <- rpart(NUMBER.OF.PERSONS.KILLED ~ .,
                     data = train_data,
                     method = "anova",
-                    control = rpart.control(maxdepth = 3 , minsplit = 10, cp = 0.001))
+                    control = rpart.control(minsplit = 10, cp = 0.001))
 
 # Make predictions on the test set
 predictions <- predict(tree_model, test_data)
@@ -627,20 +627,30 @@ predictions <- predict(tree_model, test_data)
 mae <- mean(abs(predictions - test_data$NUMBER.OF.PERSONS.KILLED))
 print(paste("Mean Absolute Error (MAE):", mae))
 
+# Calculate RMSE
+rmse <- sqrt(mean((predictions - test_data$NUMBER.OF.PERSONS.KILLED)^2))
+print(paste("Root Mean Squared Error (RMSE):", rmse))
+
+```
+
+```{r echo=FALSE}
+
 # Visualize the decision tree (adjust to make more readable)
 rpart.plot(tree_model,
+           main = "Decision Tree Model for Predicting Fatalities in Car Crashes",
            type = 4,
            extra = 101,
            under = TRUE,
            fallen.leaves = TRUE,
            compress = TRUE,
            branch = 0.5,
-           box.palette = "RdBu",
+           box.palette = "Blues",
            shadow.col = "gray",
-           cex = 0.8)
+           cex = 0.4)
 
 ```
-The decision tree model was trained to predict the number of people killed in car crashes based on the following features: BOROUGH, LATITUDE, LONGITUDE, CRASH.TIME, and PERSON_TYPE. The model was trained on 70% of the data and tested on the remaining 30%. The mean absolute error (MAE) of the model was calculated to be 0.00417116746503942. The decision tree model is visualized above. The model only has a maximum depth of 3, but it is a good starting point for predicting the number of people killed in car crashes. The model could be improved by using more features and more data.
+
+The decision tree model was trained to predict the number of people killed in car crashes based on the following features: BOROUGH, PERSON_TYPE, CRASH.TIME, and PERSON_AGE. The model was trained on 70% of the data and tested on the remaining 30%. The model achieved a Mean Absolute Error (MAE) of 0.00374560069164159 and a Root Mean Squared Error (RMSE) of 0.052475580656655. The decision tree model is visualized above. The model is quite complex and difficult to interpret, but it is able to predict the number of people killed in car crashes with a high degree of accuracy. Most likely the model is overfitting the data and would need to be adjusted to be more generalizable. However, we will most likely switch to a different model for our final analysis.
 
 ## Conclusion
 
