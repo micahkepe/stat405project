@@ -633,7 +633,7 @@ print(paste("Root Mean Squared Error (RMSE):", rmse))
 
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, warning=FALSE}
 
 # Visualize the decision tree (adjust to make more readable)
 rpart.plot(tree_model,
