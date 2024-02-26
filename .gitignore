@@ -62,3 +62,6 @@ rsconnect/
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# Don't track csv files since user will extract them from the zip file
+*.csv
