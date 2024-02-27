@@ -274,23 +274,17 @@ The heat map of car crashes in NYC shows that the highest density of car crashes
 
 ```{r echo=FALSE, fig.width=10, fig.height=8}
 
-# Select the relevant columns for the plot
-selected_data <- cleaned_data[, c("BOROUGH", "NUMBER.OF.PEDESTRIANS.INJURED",
-                                  "NUMBER.OF.CYCLIST.INJURED",
-                                  "NUMBER.OF.MOTORIST.INJURED")]
-
-# Convert selected data to long format using reshape2 package
-injury_data_long <- melt(selected_data, id.vars = "BOROUGH",
-                         variable.name = "Injury.Type", value.name = "Injuries")
-
-# Manually adjust the Injury.Type to more readable labels
-injury_data_long$Injury.Type <- factor(injury_data_long$Injury.Type,
-                                       levels = c("NUMBER.OF.PEDESTRIANS.INJURED",
-                                                  "NUMBER.OF.CYCLIST.INJURED",
-                                                  "NUMBER.OF.MOTORIST.INJURED"),
-                                       labels = c("Pedestrians",
-                                                  "Cyclists",
-                                                  "Motorists"))
+# Create a long-form data set for the boxplot
+injury_data_long <- cleaned_data %>%
+  select(BOROUGH, NUMBER.OF.PEDESTRIANS.INJURED, NUMBER.OF.CYCLIST.INJURED, NUMBER.OF.MOTORIST.INJURED) %>%
+  pivot_longer(cols = -BOROUGH, names_to = "Injury.Type", values_to = "Injuries") %>%
+  mutate(Injury.Type = factor(Injury.Type,
+                              levels = c("NUMBER.OF.PEDESTRIANS.INJURED",
+                                         "NUMBER.OF.CYCLIST.INJURED",
+                                         "NUMBER.OF.MOTORIST.INJURED"),
+                              labels = c("Pedestrians",
+                                         "Cyclists",
+                                         "Motorists")))
 
 # Create the boxplot for injuries by group across NYC boroughs
 ggplot(injury_data_long, aes(x = BOROUGH, y = Injuries, fill = Injury.Type)) +
@@ -354,7 +348,7 @@ The point plot shows the number of injuries per contributing factor, illustratin
 
 ```{r echo=FALSE, fig.width=10, fig.height=6}
 
-# # Create a subset of data with only the top contributing factors
+# Create a subset of data with only the top contributing factors
 factor_by_hour <- cleaned_data %>%
   filter(CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
                                               "Failure to Yield Right-of-Way",
@@ -385,31 +379,21 @@ The scatter plot of the top 3 contributing factors by time of day shows the time
 
 ```{r echo=FALSE}
 
-# Start with the cleaned data
-plot_data <- cleaned_data
+# Use a pipeline to create the stacked area plot data
+agg_data <- cleaned_data %>%
+  mutate(YEAR = as.numeric(format(as.Date(CRASH.DATE, "%m/%d/%Y"), "%Y"))) %>%
+  filter(CONTRIBUTING.FACTOR.VEHICLE.1 != "Unspecified" &
+           CONTRIBUTING.FACTOR.VEHICLE.1 != "") %>%
+  group_by(YEAR, CONTRIBUTING.FACTOR.VEHICLE.1) %>%
+  summarise(COUNT = n(), .groups = "drop") %>%
+  filter(CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
+                                              "Failure to Yield Right-of-Way",
+                                              "Following Too Closely",
+                                              "Other Vehicular",
+                                              "Passing Too Closely")) %>%
+  ungroup()
 
-# Convert 'CRASH.DATE' to Year
-plot_data$YEAR <- as.numeric(format(as.Date(plot_data$CRASH.DATE, "%m/%d/%Y"), "%Y"))
-
-# Remove 'Unspecified' from contributing factors
-plot_data <- subset(plot_data, CONTRIBUTING.FACTOR.VEHICLE.1 != "Unspecified" &
-                      CONTRIBUTING.FACTOR.VEHICLE.1 != "")
-
-# Aggregate data by YEAR and CONTRIBUTING FACTOR
-agg_data <- aggregate(cbind(COUNT = plot_data$COLLISION_ID) ~
-                        YEAR + CONTRIBUTING.FACTOR.VEHICLE.1,
-                      data=plot_data, FUN=length)
-
-# Find the top 5 contributing factors based on the overall count
-top_factors <- aggregate(COUNT ~ CONTRIBUTING.FACTOR.VEHICLE.1,
-                         data=agg_data, FUN=sum)
-top_factors <- top_factors[order(-top_factors$COUNT), ]
-top_factors <- head(top_factors$CONTRIBUTING.FACTOR.VEHICLE.1, 5)
-
-# Filter the aggregated data to include only the top 5 factors
-agg_data <- agg_data[agg_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% top_factors, ]
-
-# Create a color palette
+# Create a color palette for the plot
 num_factors <- length(top_factors)
 colors <- colorRampPalette(brewer.pal(min(num_factors, 9), "Set1"))(num_factors)
 
@@ -505,7 +489,7 @@ ggplot(heatmap_df, aes(x = HourOfDay, y = DayOfWeek, fill = Frequency)) +
   scale_fill_gradient(low = "white", high = "red") +
   labs(title = "Heatmap of Crashes by Day of Week and Hour of Day",
        x = "Hour of Day",
-       y = "Day of Week",
+       y = NULL,
        fill = "Crash Frequency") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
