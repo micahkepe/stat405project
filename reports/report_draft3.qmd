@@ -1,7 +1,7 @@
 ---
 title: "Group 3: Crash Analysis NYC- Draft 3"
 author: "Kevin Lei, Micah Kepe, Zachary Kepe, Giulia Costantini"
-date: "2024-02-20"
+date: "2024-02-27"
 format:
   pdf: default
   html: default
@@ -49,11 +49,12 @@ data <- read.csv("../data/Motor_Vehicle_Collisions_-_Crashes_20240213.csv")
 
 ## Introduction
 
-The NYC OpenData dataset contains details of motor vehicle collision occurrences reported by the NYPD from 2012 to 2024. Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage.
+The NYC OpenData dataset contains details of motor vehicle collision occurrences reported by the NYPD from  2012 to  2024. Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage.
 
-Car crashes in the United States represent a significant public health concern, with over 42,900 deaths involving over 61,000 vehicles in 2020 according to the Insurance Institute for Highway Safety. The economic impact of car crashes is also substantial, with an estimated cost of \$340 billion in 2019 via the National Highway Traffic Safety Administration. Not only does preventing car crashes save lives, but it also saves money and resources.
+Car crashes in the United States represent a significant public health concern, with over  42,900 deaths involving over  61,000 vehicles in  2020 according to the Insurance Institute for Highway Safety. The economic impact of car crashes is also substantial, with an estimated cost of \$340 billion in  2019 via the National Highway Traffic Safety Administration. Not only does preventing car crashes save lives, but it also saves money and resources.
 
 Our project seeks to determine the most important factors that contribute to potentially fatal accidents. By analyzing the data, we hope to identify to provide recommendations for reducing the number of accidents.
+
 
 ## Data Description
 
@@ -274,8 +275,8 @@ The heat map of car crashes in NYC shows that the highest density of car crashes
 ```{r echo=FALSE, fig.width=10, fig.height=8}
 
 # Select the relevant columns for the plot
-selected_data <- cleaned_data[, c("BOROUGH", "NUMBER.OF.PEDESTRIANS.INJURED", 
-                                  "NUMBER.OF.CYCLIST.INJURED", 
+selected_data <- cleaned_data[, c("BOROUGH", "NUMBER.OF.PEDESTRIANS.INJURED",
+                                  "NUMBER.OF.CYCLIST.INJURED",
                                   "NUMBER.OF.MOTORIST.INJURED")]
 
 # Convert selected data to long format using reshape2 package
@@ -284,26 +285,26 @@ injury_data_long <- melt(selected_data, id.vars = "BOROUGH",
 
 # Manually adjust the Injury.Type to more readable labels
 injury_data_long$Injury.Type <- factor(injury_data_long$Injury.Type,
-                                       levels = c("NUMBER.OF.PEDESTRIANS.INJURED", 
-                                                  "NUMBER.OF.CYCLIST.INJURED", 
+                                       levels = c("NUMBER.OF.PEDESTRIANS.INJURED",
+                                                  "NUMBER.OF.CYCLIST.INJURED",
                                                   "NUMBER.OF.MOTORIST.INJURED"),
-                                       labels = c("Pedestrians", 
-                                                  "Cyclists", 
+                                       labels = c("Pedestrians",
+                                                  "Cyclists",
                                                   "Motorists"))
 
 # Create the boxplot for injuries by group across NYC boroughs
 ggplot(injury_data_long, aes(x = BOROUGH, y = Injuries, fill = Injury.Type)) +
   geom_boxplot(outlier.colour = NA, outlier.shape = 1) +
   geom_point(position = position_dodge(width = 0.75), aes(color = Injury.Type)) +
-  scale_fill_manual(values=c("Pedestrians"="red", 
-                             "Cyclists"="green", 
+  scale_fill_manual(values=c("Pedestrians"="red",
+                             "Cyclists"="green",
                              "Motorists"="blue")) +
-  scale_color_manual(values=c("Pedestrians"="red", 
-                              "Cyclists"="green", 
+  scale_color_manual(values=c("Pedestrians"="red",
+                              "Cyclists"="green",
                               "Motorists"="blue")) +
   facet_wrap(~ Injury.Type, scales = "fixed") +
-  labs(title = "Injuries by Group Across NYC Boroughs", 
-       x = "Borough", 
+  labs(title = "Injuries by Group Across NYC Boroughs",
+       x = "Borough",
        y = "Number of Injuries") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
@@ -311,7 +312,7 @@ ggplot(injury_data_long, aes(x = BOROUGH, y = Injuries, fill = Injury.Type)) +
         plot.title = element_text(hjust = 0.5),
         axis.title = element_text(size = 12),
         legend.text = element_text(size = 10)) +
-  coord_cartesian(ylim = c(0, NA)) 
+  coord_cartesian(ylim = c(0, NA))
 
 ```
 
@@ -322,7 +323,7 @@ The boxplot of injuries in NYC by Borough shows the areas of NYC that have the m
 ```{r echo=FALSE, fig.width=10, fig.height=8}
 
 # Create a subset of data with only the top contributing factors
-factors <- cleaned_data[cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% 
+factors <- cleaned_data[cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in%
                           c("Driver Inattention/Distraction",
                              "Failure to Yield Right-of-Way",
                              "Backing Unsafely",
@@ -330,7 +331,7 @@ factors <- cleaned_data[cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in%
                              "Other Vehicular"), ]
 
 # Create the point plot for the top contributing factors
-ggplot(data = factors, aes(x = CONTRIBUTING.FACTOR.VEHICLE.1, 
+ggplot(data = factors, aes(x = CONTRIBUTING.FACTOR.VEHICLE.1,
                            y = NUMBER.OF.PERSONS.INJURED)) +
   aes(alpha = I(1/5)) +
   geom_point(aes(color = CONTRIBUTING.FACTOR.VEHICLE.1), size = 3) +
@@ -354,35 +355,35 @@ The point plot shows the number of injuries per contributing factor, illustratin
 ```{r echo=FALSE, fig.width=10, fig.height=6}
 
 # Create a subset of data with only the top contributing factors
-top_factors_indices <- cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% 
+top_factors_indices <- cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in%
   c("Driver Inattention/Distraction",
      "Failure to Yield Right-of-Way",
      "Backing Unsafely")
 top_factors <- cleaned_data[top_factors_indices, ]
 
 # Create a new column for hour of the day from CRASH.TIME
-top_factors$HOUR <- as.numeric(format(strptime(top_factors$CRASH.TIME, 
+top_factors$HOUR <- as.numeric(format(strptime(top_factors$CRASH.TIME,
                                                format = "%H:%M:%S"), "%H"))
 
 # Initialize a data frame for aggregated results
-factor_by_hour <- data.frame(HOUR = integer(), 
-                             CONTRIBUTING.FACTOR.VEHICLE.1 = character(), 
+factor_by_hour <- data.frame(HOUR = integer(),
+                             CONTRIBUTING.FACTOR.VEHICLE.1 = character(),
                              Count = integer())
 
 # Loop through unique hours and factors to count occurrences
 for (hour in unique(top_factors$HOUR)) {
   for (factor in unique(top_factors$CONTRIBUTING.FACTOR.VEHICLE.1)) {
     # Subset data for each hour and factor
-    subset_data <- top_factors[top_factors$HOUR == hour & 
+    subset_data <- top_factors[top_factors$HOUR == hour &
                                  top_factors$CONTRIBUTING.FACTOR.VEHICLE.1 == factor, ]
-    
+
     # Count number of rows for each subset
     count <- nrow(subset_data)
-    
+
     # Append to the results data frame
-    factor_by_hour <- rbind(factor_by_hour, 
-                            data.frame(HOUR = hour, 
-                                       CONTRIBUTING.FACTOR.VEHICLE.1 = factor, 
+    factor_by_hour <- rbind(factor_by_hour,
+                            data.frame(HOUR = hour,
+                                       CONTRIBUTING.FACTOR.VEHICLE.1 = factor,
                                        Count = count))
   }
 }
@@ -415,16 +416,16 @@ plot_data <- cleaned_data
 plot_data$YEAR <- as.numeric(format(as.Date(plot_data$CRASH.DATE, "%m/%d/%Y"), "%Y"))
 
 # Remove 'Unspecified' from contributing factors
-plot_data <- subset(plot_data, CONTRIBUTING.FACTOR.VEHICLE.1 != "Unspecified" & 
+plot_data <- subset(plot_data, CONTRIBUTING.FACTOR.VEHICLE.1 != "Unspecified" &
                       CONTRIBUTING.FACTOR.VEHICLE.1 != "")
 
 # Aggregate data by YEAR and CONTRIBUTING FACTOR
-agg_data <- aggregate(cbind(COUNT = plot_data$COLLISION_ID) ~ 
-                        YEAR + CONTRIBUTING.FACTOR.VEHICLE.1, 
+agg_data <- aggregate(cbind(COUNT = plot_data$COLLISION_ID) ~
+                        YEAR + CONTRIBUTING.FACTOR.VEHICLE.1,
                       data=plot_data, FUN=length)
 
 # Find the top 5 contributing factors based on the overall count
-top_factors <- aggregate(COUNT ~ CONTRIBUTING.FACTOR.VEHICLE.1, 
+top_factors <- aggregate(COUNT ~ CONTRIBUTING.FACTOR.VEHICLE.1,
                          data=agg_data, FUN=sum)
 top_factors <- top_factors[order(-top_factors$COUNT), ]
 top_factors <- head(top_factors$CONTRIBUTING.FACTOR.VEHICLE.1, 5)
@@ -437,7 +438,7 @@ num_factors <- length(top_factors)
 colors <- colorRampPalette(brewer.pal(min(num_factors, 9), "Set1"))(num_factors)
 
 # Create the stacked area plot for the top 5 factors with the requested adjustments
-ggplot(agg_data, aes(x = YEAR, y = COUNT, 
+ggplot(agg_data, aes(x = YEAR, y = COUNT,
                              fill = CONTRIBUTING.FACTOR.VEHICLE.1)) +
   geom_area(position = 'stack') +
   scale_fill_manual(values = colors) +
@@ -467,9 +468,9 @@ The stacked area plot of the top 5 contributing factors to car crashes by year s
 ```{r echo=FALSE}
 
 # Create the jitter plot for the top 5 contributing factors
-ggplot(data = cleaned_data[cleaned_data$NUMBER.OF.PERSONS.INJURED + 
+ggplot(data = cleaned_data[cleaned_data$NUMBER.OF.PERSONS.INJURED +
                              cleaned_data$NUMBER.OF.PERSONS.KILLED > 0
-                           & cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in% 
+                           & cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in%
                              c("Driver Inattention/Distraction",
                                 "Failure to Yield Right-of-Way",
                                 "Following Too Closely",
@@ -513,22 +514,22 @@ heatmap_df <- as.data.frame(heatmap_data)
 names(heatmap_df) <- c("DayOfWeek", "HourOfDay", "Frequency")
 
 # Ensure DayOfWeek is an ordered factor to maintain the day order
-heatmap_df$DayOfWeek <- factor(heatmap_df$DayOfWeek, 
-                               levels = c("Sunday", 
-                                          "Monday", 
-                                          "Tuesday", 
-                                          "Wednesday", 
-                                          "Thursday", 
-                                          "Friday", 
+heatmap_df$DayOfWeek <- factor(heatmap_df$DayOfWeek,
+                               levels = c("Sunday",
+                                          "Monday",
+                                          "Tuesday",
+                                          "Wednesday",
+                                          "Thursday",
+                                          "Friday",
                                           "Saturday"))
 
 # Plotting the map
 ggplot(heatmap_df, aes(x = HourOfDay, y = DayOfWeek, fill = Frequency)) +
   geom_tile(color = "white") +
   scale_fill_gradient(low = "white", high = "red") +
-  labs(title = "Heatmap of Crashes by Day of Week and Hour of Day", 
-       x = "Hour of Day", 
-       y = "Day of Week", 
+  labs(title = "Heatmap of Crashes by Day of Week and Hour of Day",
+       x = "Hour of Day",
+       y = "Day of Week",
        fill = "Crash Frequency") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
@@ -553,7 +554,7 @@ merged_data <- merge(cleaned_data, data_people, by = "COLLISION_ID")
 ```{r echo=FALSE, fig.width=12, fig.height=10}
 
 # Prepare the data for modeling
-model_data <- merged_data[, c("BOROUGH", 
+model_data <- merged_data[, c("BOROUGH",
                               "CRASH.TIME",
                               "PERSON_AGE",
                               "NUMBER.OF.PERSONS.KILLED",
