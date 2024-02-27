@@ -16,7 +16,7 @@ brew install git-lfs
 
 git lfs is used to handle the large `.zip` file in the `data` folder. If you do not have `git lfs` installed, you will encounter errors when trying to clone the repository or create changes.
 
-To populate your local repository with the data, extract the `data.zip` file in the `data` folder. This will create a folder called `data` with the three `.csv` files inside. Move the contents of the `data` folder to the `data` folder in the root of the repository and delete the empty `data` folder. 
+To populate your local repository with the data, extract the `data.zip` file in the `data` folder. This will create a folder called `data` with the three `.csv` files inside. Move the contents of the `data` folder to the `data` folder in the root of the repository and delete the empty `data` folder. The `.csv` files should now be in the `data` folder in the root of the repository and will not be tracked by `git lfs`.
 
 If you are having trouble with `git lfs`, contact the repository owner for the direct zip file.
 
