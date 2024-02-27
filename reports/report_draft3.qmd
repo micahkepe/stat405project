@@ -354,39 +354,15 @@ The point plot shows the number of injuries per contributing factor, illustratin
 
 ```{r echo=FALSE, fig.width=10, fig.height=6}
 
-# Create a subset of data with only the top contributing factors
-top_factors_indices <- cleaned_data$CONTRIBUTING.FACTOR.VEHICLE.1 %in%
-  c("Driver Inattention/Distraction",
-     "Failure to Yield Right-of-Way",
-     "Backing Unsafely")
-top_factors <- cleaned_data[top_factors_indices, ]
-
-# Create a new column for hour of the day from CRASH.TIME
-top_factors$HOUR <- as.numeric(format(strptime(top_factors$CRASH.TIME,
-                                               format = "%H:%M:%S"), "%H"))
-
-# Initialize a data frame for aggregated results
-factor_by_hour <- data.frame(HOUR = integer(),
-                             CONTRIBUTING.FACTOR.VEHICLE.1 = character(),
-                             Count = integer())
-
-# Loop through unique hours and factors to count occurrences
-for (hour in unique(top_factors$HOUR)) {
-  for (factor in unique(top_factors$CONTRIBUTING.FACTOR.VEHICLE.1)) {
-    # Subset data for each hour and factor
-    subset_data <- top_factors[top_factors$HOUR == hour &
-                                 top_factors$CONTRIBUTING.FACTOR.VEHICLE.1 == factor, ]
-
-    # Count number of rows for each subset
-    count <- nrow(subset_data)
-
-    # Append to the results data frame
-    factor_by_hour <- rbind(factor_by_hour,
-                            data.frame(HOUR = hour,
-                                       CONTRIBUTING.FACTOR.VEHICLE.1 = factor,
-                                       Count = count))
-  }
-}
+# # Create a subset of data with only the top contributing factors
+factor_by_hour <- cleaned_data %>%
+  filter(CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
+                                              "Failure to Yield Right-of-Way",
+                                              "Backing Unsafely")) %>%
+  mutate(HOUR = as.numeric(format(strptime(CRASH.TIME, format = "%H:%M:%S"), "%H"))) %>%
+  group_by(HOUR, CONTRIBUTING.FACTOR.VEHICLE.1) %>%
+  summarise(Count = n(), .groups = "drop" ) %>%
+  ungroup()
 
 # Use ggplot2 for plotting
 ggplot(factor_by_hour, aes(x = HOUR, y = Count, color = CONTRIBUTING.FACTOR.VEHICLE.1)) +
