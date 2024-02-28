@@ -489,12 +489,7 @@ The decision tree model was trained to predict the number of people killed in ca
 ```{r echo=FALSE}
 
 # Prepare the data for modeling
-data_vehicles <- read.csv("../data/Motor_Vehicle_Collisions_-_Vehicles_20230226.csv")
-
-# Merge all three data sets on the common key COLLISION_ID
-merged_data_all <- merge(merged_data, data_vehicles, by = "COLLISION_ID")
-
-# Prepare the data for modeling using dplyr
+data_vehicles <- read.csv("../data/Motor_Vehicle_Collisions_-_Vehicles_20240226.csv")
 
 ```
 
