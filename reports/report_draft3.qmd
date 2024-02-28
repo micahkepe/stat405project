@@ -12,6 +12,13 @@ geometry: margin=1in
 toc: true                   
 toc-depth: 3
 toc-title: "Table of Contents"
+header-includes:
+  - \usepackage{fancyhdr}
+  - \pagestyle{fancy}
+  - \fancyhead[CO,CE]{Crash Analysis NYC- Draft 3}
+  - \fancyhead[LE,RO]{\thepage}
+  - \fancyfoot{}
+  - \fancyfoot[LE,RO]{\thepage}
 ---
 
 ```{r setup, include=FALSE}
@@ -42,8 +49,15 @@ library(rpart.plot)
 
 ```{r, echo=FALSE}
 
-# Load the data set
-data <- read.csv("../data/Motor_Vehicle_Collisions_-_Crashes_20240213.csv")
+# Load the data sets
+# Primary data set of car crashes
+data_crashes <- read.csv("../data/Motor_Vehicle_Collisions_-_Crashes_20240213.csv")
+
+# Load secondary data set of people involved in car crashes
+data_people <- read.csv("../data/Motor_Vehicle_Collisions_-_Person_20240221.csv")
+
+# Load secondary data set of vehicles involved in car crashes
+data_vehicles <- read.csv("../data/Motor_Vehicle_Collisions_-_Vehicles_20240226.csv")
 
 ```
 
@@ -64,7 +78,7 @@ The data set contains over 2 million records, each detailing a motor vehicle col
 ```{r echo=FALSE}
 
 # Perform data cleaning and pre-processing w/ dplyr 
-cleaned_data <- data %>%
+cleaned_crashes_data <- data_crashes %>%
   # Remove rows with NAs in crucial columns, filter out empty strings for BOROUGH
   filter(!is.na(BOROUGH) & BOROUGH != "",
          !is.na(LATITUDE) & LATITUDE > 40 & LATITUDE < 41,
@@ -96,10 +110,11 @@ As a result of the data cleaning process, the data set went from having 2,065,19
 
 ```{r echo=FALSE, fig.width=10, fig.height=6}
 
+# use population data from most recent census
 populations <- c(BRONX = 1.427e6, QUEENS = 2.271e6, BROOKLYN = 2.577e6, MANHATTAN = 1.629e6, STATEN_ISLAND = 475596)
 
 # Create a table of the frequency of car crashes by borough
-borough_cleaned <- table(cleaned_data$BOROUGH)
+borough_cleaned <- table(cleaned_crashes_data$BOROUGH)
 
 # Calculate crashes per capita for each borough
 crashes_per_capita <- borough_cleaned / populations
@@ -160,7 +175,7 @@ landmarks <- data.frame(
 )
 
 # Create a heat mapping using ggplot
-ggplot(cleaned_data, aes(x = LONGITUDE, y = LATITUDE)) +
+ggplot(cleaned_crashes_data, aes(x = LONGITUDE, y = LATITUDE)) +
   geom_bin2d(bins = 100, alpha = 0.6) +
   scale_fill_gradient(low = "blue", high = "red") +
   labs(title = "Density of Car Crashes in NYC",
@@ -181,7 +196,7 @@ The heat map of car crashes in NYC shows that the highest density of car crashes
 ```{r echo=FALSE, fig.width=10, fig.height=6}
 
 # Extract the hour from the CRASH.TIME column and convert it to a numeric value
-ggplot(cleaned_data, aes(x = as.numeric(substr(CRASH.TIME, 1, 2)))) +
+ggplot(cleaned_crashes_data, aes(x = as.numeric(substr(CRASH.TIME, 1, 2)))) +
   geom_histogram(bins = 24, fill = "dodgerblue", color = "white") +
   labs(title = "Car Crashes Frequency by Time of Day",
        x = "Hour of the Day",
@@ -204,7 +219,7 @@ The histogram of car crashes by time of day shows that the most car crashes occu
 ```{r echo=FALSE, fig.width=10, fig.height=6}
 
 # Create a subset of data with only the top contributing factors
-factor_by_hour <- cleaned_data %>%
+factor_by_hour <- cleaned_crashes_data %>%
   filter(CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
                                               "Failure to Yield Right-of-Way",
                                               "Backing Unsafely")) %>%
@@ -249,7 +264,7 @@ The scatter plot of the top 3 contributing factors by time of day shows the time
 ```{r echo=FALSE, fig.width=10, fig.height=8}
 
 # Start with the cleaned data
-analysis_data <- cleaned_data
+analysis_data <- cleaned_crashes_data
 
 # Directly extract day of the week from CRASH.DATE
 analysis_data$DayOfWeek <- weekdays(analysis_data$CRASH.DATE, abbreviate = FALSE)
@@ -298,7 +313,7 @@ The temporal density map shows the frequency of car crashes by day of the week a
 old_par <- par(cex=0.8)
 
 # Create a pie chart for the top 5 specified contributing factors to car crashes
-top_factors_df <- cleaned_data %>%
+top_factors_df <- cleaned_crashes_data %>%
   filter(CONTRIBUTING.FACTOR.VEHICLE.1 != "Unspecified", CONTRIBUTING.FACTOR.VEHICLE.1 != "") %>%
   count(CONTRIBUTING.FACTOR.VEHICLE.1, sort = TRUE) %>%
   slice_max(n = 5, order_by = n)
@@ -327,7 +342,7 @@ Disregarding the unspecified contributing factors, the top 5 contributing factor
 ```{r echo=FALSE}
 
 # Use a pipeline to create the stacked area plot data
-agg_data <- cleaned_data %>%
+agg_data <- cleaned_crashes_data %>%
   mutate(YEAR = as.numeric(format(as.Date(CRASH.DATE, "%m/%d/%Y"), "%Y"))) %>%
   filter(CONTRIBUTING.FACTOR.VEHICLE.1 != "Unspecified" &
            CONTRIBUTING.FACTOR.VEHICLE.1 != "") %>%
@@ -374,7 +389,7 @@ The stacked area plot of the top 5 contributing factors to car crashes by year s
 
 ```{r echo=FALSE}
 
-filtered_data <- cleaned_data %>%
+filtered_data <- cleaned_crashes_data %>%
   filter(NUMBER.OF.PERSONS.INJURED + NUMBER.OF.PERSONS.KILLED > 0,
          CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
                                                "Failure to Yield Right-of-Way",
@@ -407,60 +422,42 @@ The jitter plot shows the number of people injured or killed in crashes caused b
 
 ```{r echo=FALSE}
 
-# Load secondary data set of people involved in car crashes
-data_people <- read.csv("../data/Motor_Vehicle_Collisions_-_Person_20240221.csv")
-
 # Merge the two data sets on the common key COLLISION_ID
-merged_data <- merge(cleaned_data, data_people, by = "COLLISION_ID")
+people_crashes_merged <- merge(cleaned_crashes_data, data_people, by = "COLLISION_ID")
 
 ```
 
 ```{r echo=FALSE, fig.width=12, fig.height=10}
 
-# Prepare the data for modeling
-model_data <- merged_data[, c("BOROUGH",
-                              "CRASH.TIME",
-                              "PERSON_AGE",
-                              "NUMBER.OF.PERSONS.KILLED",
-                              "PERSON_TYPE")]
-
-# Ensure that the target variable is numeric
-model_data$NUMBER.OF.PERSONS.KILLED <- as.numeric(model_data$NUMBER.OF.PERSONS.KILLED)
-
-# Convert CRASH.TIME to numeric
-model_data$CRASH.TIME <- as.numeric(substr(model_data$CRASH.TIME, 1, 2))
-
-# Convert personal age to numeric
-model_data$PERSON_AGE <- as.numeric(model_data$PERSON_AGE)
-
-# Convert categorical variables to factors
-model_data$BOROUGH <- as.factor(model_data$BOROUGH)
-model_data$PERSON_TYPE <- as.factor(model_data$PERSON_TYPE)
-
-# Remove rows with NAs in any column
-model_data <- na.omit(model_data)
+# # Prepare the data for modeling
+dt_model_data <- people_crashes_merged %>%
+  select(BOROUGH, CRASH.TIME, PERSON_AGE, NUMBER.OF.PERSONS.KILLED, PERSON_TYPE) %>%
+  mutate(CRASH.TIME = as.numeric(substr(CRASH.TIME, 1, 2))) %>%
+  mutate(PERSON_AGE = as.numeric(PERSON_AGE)) %>%
+  mutate_at(vars(BOROUGH, PERSON_TYPE), as.factor) %>%
+  na.omit()
 
 # Split the data into training and testing sets
 set.seed(123)
-train_indices <- sample(1:nrow(model_data), 0.7 * nrow(model_data))
-train_data <- model_data[train_indices, ]
-test_data <- model_data[-train_indices, ]
+dt_train_indices <- sample(1:nrow(dt_model_data), 0.7 * nrow(dt_model_data))
+dt_train_data <- dt_model_data[dt_train_indices, ]
+dt_test_data <- dt_model_data[-dt_train_indices, ]
 
 # Train a decision tree model w/ abbreviated contributing factors
 tree_model <- rpart(NUMBER.OF.PERSONS.KILLED ~ .,
-                    data = train_data,
+                    data = dt_train_data,
                     method = "anova",
                     control = rpart.control(minsplit = 10, cp = 0.001))
 
 # Make predictions on the test set
-predictions <- predict(tree_model, test_data)
+predictions <- predict(tree_model, dt_test_data)
 
 # Calculate MAE
-mae <- mean(abs(predictions - test_data$NUMBER.OF.PERSONS.KILLED))
+mae <- mean(abs(predictions - dt_test_data$NUMBER.OF.PERSONS.KILLED))
 print(paste("Mean Absolute Error (MAE):", mae))
 
 # Calculate RMSE
-rmse <- sqrt(mean((predictions - test_data$NUMBER.OF.PERSONS.KILLED)^2))
+rmse <- sqrt(mean((predictions - dt_test_data$NUMBER.OF.PERSONS.KILLED)^2))
 print(paste("Root Mean Squared Error (RMSE):", rmse))
 
 ```
@@ -489,7 +486,45 @@ The decision tree model was trained to predict the number of people killed in ca
 ```{r echo=FALSE}
 
 # Prepare the data for modeling
-data_vehicles <- read.csv("../data/Motor_Vehicle_Collisions_-_Vehicles_20240226.csv")
+
+# Select the relevant columns for the model from each dataset
+data_crash_cleaned <- data_crashes %>%
+  select(COLLISION_ID, CRASH.DATE, CRASH.TIME, BOROUGH, LATITUDE, LONGITUDE, NUMBER.OF.PERSONS.INJURED, NUMBER.OF.PERSONS.KILLED)
+
+data_vehicle_cleaned <- data_vehicles %>%
+  select(COLLISION_ID, VEHICLE_TYPE, VEHICLE_YEAR, DRIVER_SEX, STATE_REGISTRATION)
+
+data_person_cleaned <- data_people %>%
+  select(COLLISION_ID, PERSON_TYPE, PERSON_AGE, PERSON_SEX, UNIQUE_ID)
+
+
+# Merge the three datasets on the common key COLLISION_ID
+crash_vehicle_merged <- merge(data_crash_cleaned, data_vehicle_cleaned, by = "COLLISION_ID")
+
+# Merge the merged dataset with the person dataset on the common keys COLLISION_ID and VEHICLE_ID
+final_merged_dataset <- merge(crash_vehicle_merged, data_person_cleaned, by = "COLLISION_ID")
+
+# Handle missing values
+final_merged_dataset <- final_merged_dataset %>%
+  filter(!is.na(BOROUGH) & BOROUGH != "",
+         !is.na(LATITUDE) & LATITUDE > 40 & LATITUDE < 41,
+         !is.na(LONGITUDE) & LONGITUDE < -73 & LONGITUDE > -75,
+         !is.na(CRASH.DATE),
+         !is.na(CRASH.TIME),
+         !is.na(NUMBER.OF.PERSONS.INJURED),
+         !is.na(NUMBER.OF.PERSONS.KILLED),
+         !is.na(VEHICLE_TYPE),
+         !is.na(VEHICLE_YEAR),
+         !is.na(DRIVER_SEX),
+         !is.na(PERSON_AGE),
+         !is.na(UNIQUE_ID))
+
+```
+
+```{r echo=FALSE}
+
+# TODO: Perform multiple linear regression
+
 
 ```
 
