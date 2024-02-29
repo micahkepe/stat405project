@@ -24,15 +24,15 @@ header-includes:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-# Install packages if not already installed
-# install.packages("tidyverse")
-# install.packages("plotly")
-# install.packages("chron")
-# install.packages("reshape2")
-# install.packages("rpart")
-# install.packages("rpart.plot")
+# # Install packages if not already installed
+if (!require("tidyverse")) install.packages("tidyverse")
+if (!require("plotly")) install.packages("plotly")
+if (!require("chron")) install.packages("chron")
+if (!require("reshape2")) install.packages("reshape2")
+if (!require("rpart")) install.packages("rpart")
+if (!require("rpart.plot")) install.packages("rpart.plot")
 
-# Load required libraries
+# Load the required packages
 library(reshape2)
 library(tidyverse)
 library(lubridate)
@@ -61,9 +61,11 @@ data_vehicles <- read.csv("../data/Motor_Vehicle_Collisions_-_Vehicles_20240226.
 
 ```
 
+\pagebreak
+
 ## Introduction
 
-The NYC OpenData dataset contains details of motor vehicle collision occurrences reported by the NYPD from 2012 to 2024. Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage.
+In the bustling metropolis of New York City, the dynamics of motor vehicle collisions present a complex puzzle of public health, urban planning, and behavioral science.
 
 Car crashes in the United States represent a significant public health concern, with over 42,900 deaths involving over 61,000 vehicles in 2020 according to the Insurance Institute for Highway Safety. The economic impact of car crashes is also substantial, with an estimated cost of \$340 billion in 2019 via the National Highway Traffic Safety Administration. Not only does preventing car crashes save lives, but it also saves money and resources.
 
@@ -71,7 +73,7 @@ Our project seeks to determine the most important factors that contribute to pot
 
 ## Data Description
 
-The data set contains over 2 million records, each detailing a motor vehicle collision. The data includes the date, time, location (latitude, longitude, borough), and the number of individuals affected (injured or killed) among drivers, pedestrians, and cyclists. The data set also includes information about the vehicles involved, such as the type of vehicle and the contributing factors to the crash. Our analysis will focus on understanding patterns and trends within these incidents, and identifying the most important factors that contribute to potentially fatal accidents.
+The NYC OpenData dataset contains details of motor vehicle collision occurrences reported by the NYPD from 2012 to 2024. Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage. The data set of crash incidents contains over 2 million records alone, each detailing a motor vehicle collision. The data includes the date, time, location (latitude, longitude, borough), and the number of individuals affected (injured or killed) among drivers, pedestrians, and cyclists. In addition to the crash dataset, NYC OpenData maintains two other datasets related to the vehicle(s) and people involved in each crash, respectively. When combined, these datasets provide a comprehensive view of each collision incident and the individuals involved. Our analysis will focus on understanding patterns and trends within these incidents, and identifying the most important factors that contribute to potentially fatal accidents.
 
 ## Data Cleaning and Pre-Processing
 
@@ -102,9 +104,13 @@ cleaned_crashes_data <- data_crashes %>%
 
 For the data cleaning process, we removed rows with missing or invalid values in crucial columns, such as BOROUGH, LATITUDE, LONGITUDE, CRASH.DATE, and CRASH.TIME. We also converted the CRASH.DATE column to a Date format and the CRASH.TIME column to a more standard format. We replaced empty strings with "UNKNOWN" for street names and dropped the LOCATION column as it was redundant. Finally, we removed any remaining rows with NA values in any column.
 
-As a result of the data cleaning process, the data set went from having 2,065,192 rows and 29 columns to having 1,382,320 rows and 28 columns. While this is a significant reduction in the number of rows, the data set is still large enough to perform meaningful analysis.
+As a result of the data cleaning process, the primary data set went from having 2,065,192 rows and 29 columns to having 1,382,320 rows and 28 columns. While this is a significant reduction in the number of rows, the data set is still large enough to perform meaningful analysis.
+
+\pagebreak
 
 ## Past Trends and Insights
+
+After cleaning the data, we performed an exploratory data analysis to identify trends and insights in the data and glean a better understanding of the factors that contribute to car crashes. Understanding the past trends of the data is crucial for informing our intuition leading into our predictive modeling and the recommendations we plan to make. Our tools were graphs and charts, each telling a different story about the data.
 
 ### Frequency of Car Crashes by NYC Borough (2012-2024)
 
@@ -216,7 +222,7 @@ The histogram of car crashes by time of day shows that the most car crashes occu
 
 ### Line Plot of Top 3 Contributing Factors by Time of Day
 
-```{r echo=FALSE, fig.width=10, fig.height=6}
+```{r echo=FALSE, fig.width=10, fig.height=6, warning=FALSE}
 
 # Create a subset of data with only the top contributing factors
 factor_by_hour <- cleaned_crashes_data %>%
@@ -230,13 +236,13 @@ factor_by_hour <- cleaned_crashes_data %>%
 
 # Use ggplot2 for plotting
 ggplot(factor_by_hour, aes(x = HOUR, y = Count, color = CONTRIBUTING.FACTOR.VEHICLE.1, group = CONTRIBUTING.FACTOR.VEHICLE.1)) +
-  geom_line(size = 1.2, alpha = 0.9) +
+  geom_line(linewidth = 1.2, alpha = 0.9) +
   geom_point(size = 3, alpha = 0.8) +
   scale_color_manual(values = c("Driver Inattention/Distraction" = "#E69F00",
                                 "Failure to Yield Right-of-Way" = "#56B4E9",
                                 "Backing Unsafely" = "#009E73")) +
   labs(title = "Contributing Factors to Crashes by Hour of Day",
-       subtitle = "Comparing the top three contributing factors",
+       subtitle = "Top 3 Specified Contributing Factors",
        x = "Hour of the Day (24-hour format)",
        y = "Number of Crashes",
        color = "Contributing Factor") +
@@ -389,6 +395,7 @@ The stacked area plot of the top 5 contributing factors to car crashes by year s
 
 ```{r echo=FALSE}
 
+# filter the data to only include crashes with injuries or fatalities
 filtered_data <- cleaned_crashes_data %>%
   filter(NUMBER.OF.PERSONS.INJURED + NUMBER.OF.PERSONS.KILLED > 0,
          CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
@@ -416,6 +423,18 @@ ggplot(data = filtered_data) +
 
 The jitter plot shows the number of people injured or killed in crashes caused by the top 5 factors. The plot shows that the most common contributing factors to crashes are also correlated with more violent crashes. Driver inattention or distraction caused the most violent crashes. This plot gives more insight into how different contributing factors of crashes relate to injuries and deaths.
 
+### Key Findings
+
+**Borough-wise Crash Frequency:** We found that some boroughs experience more crashes than others, with Brooklyn leading the chart. This could relate to population density, traffic flow, or other urban factors.
+
+**Crash Density and Landmarks:** A map showing where crashes happen most frequently revealed that central areas with heavy traffic and significant landmarks are hotspots for incidents.
+
+**Time of Day Analysis:** Crashes peak during evening rush hours, suggesting that the end-of-day commute might be particularly hazardous.
+
+**Contributing Factors:** Distracted driving emerged as a leading cause of accidents, highlighting the need for increased awareness and possibly stricter regulations on driver attention.
+
+\pagebreak
+
 ## Predictive Modeling
 
 ### Decision Tree
@@ -429,7 +448,7 @@ people_crashes_merged <- merge(cleaned_crashes_data, data_people, by = "COLLISIO
 
 ```{r echo=FALSE, fig.width=12, fig.height=10}
 
-# # Prepare the data for modeling
+# Prepare the data for modeling
 dt_model_data <- people_crashes_merged %>%
   select(BOROUGH, CRASH.TIME, PERSON_AGE, NUMBER.OF.PERSONS.KILLED, PERSON_TYPE) %>%
   mutate(CRASH.TIME = as.numeric(substr(CRASH.TIME, 1, 2))) %>%
@@ -479,9 +498,13 @@ rpart.plot(tree_model,
 
 ```
 
-The decision tree model was trained to predict the number of people killed in car crashes based on the following features: BOROUGH, PERSON_TYPE, CRASH.TIME, and PERSON_AGE. The model was trained on 70% of the data and tested on the remaining 30%. The model achieved a Mean Absolute Error (MAE) of 0.00374560069164159 and a Root Mean Squared Error (RMSE) of 0.052475580656655. The decision tree model is visualized above. The model is quite complex and difficult to interpret, but it is able to predict the number of people killed in car crashes with a high degree of accuracy. Most likely the model is overfitting the data and would need to be adjusted to be more generalizable. However, we will most likely switch to a different model for our final analysis.
+Before interpretting the decision tree, it is important to understand the theoretical underpinnings of the model. Decision trees are a type of supervised learning algorithm that is mostly used in classification problems. It works for both categorical and continuous input and output variables. The goal of using a decision tree is to create a model that predicts the value of a target variable by learning simple decision rules inferred from the data features. The decision tree model is a flowchart-like structure in which each internal node represents a test on an attribute, each branch represents the outcome of the test, and each leaf node represents a class label. The paths from the root to the leaf represent classification rules. Each branch represents a choice or condition leading to different outcomes.
 
-### Multiple Linear Regression
+In this case, the decision tree model was trained to predict the number of people killed in car crashes based on the following features: BOROUGH, PERSON_TYPE, CRASH.TIME, and PERSON_AGE. The model was trained on 70% of the data and tested on the remaining 30%. The model achieved a Mean Absolute Error (MAE) of 0.00374560069164159 and a Root Mean Squared Error (RMSE) of 0.052475580656655. The decision tree model is visualized above. The model is quite complex and difficult to interpret, but it is able to predict the number of people killed in car crashes with a high degree of accuracy. Most likely the model is overfitting, and the complexity of the model is not necessary for the task at hand. However, the model is a good starting point for predicting the number of people killed in car crashes.
+
+\pagebreak
+
+### Statistical Modeling with Generalized Linear Model
 
 ```{r echo=FALSE}
 
@@ -523,11 +546,72 @@ final_merged_dataset <- final_merged_dataset %>%
 
 ```{r echo=FALSE}
 
-# TODO: Perform multiple linear regression
+# transmutate CRASH.TIME to 4-hour intervals to reduce the number of levels
+glm_data <- final_merged_dataset %>%
+  # mutate(CRASH.TIME = as.numeric(substr(CRASH.TIME, 1, 2))) %>%
+  mutate(CRASH.TIME = as.numeric(format(strptime(CRASH.TIME, format = "%H:%M"), "%H"))) %>%
+  mutate(CRASH.TIME = case_when(
+    CRASH.TIME >= 0 & CRASH.TIME < 6 ~ "Late Night",
+    CRASH.TIME >= 6 & CRASH.TIME < 12 ~ "Morning",
+    CRASH.TIME >= 12 & CRASH.TIME < 18 ~ "Afternoon",
+    CRASH.TIME >= 18 & CRASH.TIME <= 23 ~ "Evening"
+  )) %>%
+  mutate(CRASH.TIME = as.factor(CRASH.TIME))
 
+# transmutate PERSON_AGE to age groups to reduce the number of levels
+glm_data <- glm_data %>%
+  mutate(PERSON_AGE = case_when(
+    PERSON_AGE >= 0 & PERSON_AGE < 18 ~ "Under 18",
+    PERSON_AGE >= 18 & PERSON_AGE < 25 ~ "18-24",
+    PERSON_AGE >= 25 & PERSON_AGE < 35 ~ "25-34",
+    PERSON_AGE >= 35 & PERSON_AGE < 45 ~ "35-44",
+    PERSON_AGE >= 45 & PERSON_AGE < 55 ~ "45-54",
+    PERSON_AGE >= 55 & PERSON_AGE < 65 ~ "55-64",
+    PERSON_AGE >= 65 ~ "65+"
+  )) %>%
+  mutate(PERSON_AGE = as.factor(PERSON_AGE))
+
+# transmute CRASH.DATE to day of the week to reduce the number of levels
+glm_data <- glm_data %>%
+  mutate(CRASH.DATE = weekdays(as.Date(CRASH.DATE, format = "%m/%d/%Y"), abbreviate = FALSE)) %>%
+  mutate(CRASH.DATE = as.factor(CRASH.DATE))
+  
+
+set.seed(123) # Set seed for reproducibility
+subsampled_data <- glm_data %>%
+  sample_n(10000) # Sub sample the data to speed up the model fitting
+
+# Fit a generalized linear model to predict the number of people injured/killed in car crashes
+glm_model <- glm(NUMBER.OF.PERSONS.INJURED + NUMBER.OF.PERSONS.KILLED ~ 
+                   CRASH.TIME + BOROUGH + DRIVER_SEX + PERSON_AGE + CRASH.DATE,
+                 data = subsampled_data,
+                 family = poisson)
+
+# Summarize the model
+summary(glm_model)
 
 ```
 
+Generalized Linear Models (GLMs) are an extension of traditional linear regression models that allow for response variables to have error distributions other than the normal distribution. GLMs are used to model relationships between a scalar-dependent variable and one or more independent variables. The model consists of three components: (1) the random component, which specifies the distribution of the response variable; (2) the systematic component, which is the linear combination of the predictors; and (3) the link function, which connects the mean of the distribution of the response variable to the linear predictor. In this analysis, we utilize a Poisson distribution, appropriate for count data such as the number of people injured or killed in car crashes. The Poisson distribution models data where events occur independently within a fixed interval and assumes that the number of events is proportional to the length of the interval.
+
+The generalized linear model was trained to predict the number of people injured or killed in car crashes based on the following features: CRASH.TIME, BOROUGH, DRIVER_SEX, PERSON_AGE, and CRASH.DATE. The model was trained on a subsample of 10,000 rows of the data in order to speed up the model fitting process. The fitted GLM (whose results are shown above) provides a summary of the model's coefficients, standard errors, z-values, and p-values. The coefficients represent the estimated effect of each predictor variable on the response variable, while the p-values indicate the statistical significance of these effects. The results indicate that the time of day, borough, driver's sex, the person's age group, and the day of the week significantly influence the likelihood of injuries or fatalities. For instance, evening times and late nights have higher associated counts of injuries or fatalities compared to other times of the day, highlighting riskier periods for road users. Manhattan, compared to other boroughs, shows a significantly lower count, suggesting geographical differences in traffic safety or reporting practices. Additionally, the model reveals the older age groups (55-64, 65+) have a lower likelihood of being involved in injurious or fatal crashes compared to younger age groups. The day of the week also plays a role, with Thursday showing a higher likelihood of crashes compared to other days, suggesting possible variations in traffic patterns or behaviors.
+
+It is important to note, however, that while GLM provides valuable insights, it is based on associations and does not imply causation. The model's assumptions, including the independence of events and the suitability of the Poisson distribution for this data, should be carefully considered when interpreting the results and planning interventions.
+
+\pagebreak
+
 ## Conclusion
 
-In our further research since our previous report draft, we have gathered more insights into our data. Of note is the insight that most accidents actually occur within weekdays and during the day, not at night. We have also gathered insights into the contributing factors of car crashes and how they relate to injuries and fatalities. With the addition of NYC OpenData's secondary dataset of people involved in car crashes, we hope to uncover even more factors, trends, discoveries, etc. that will better guide our potential suggestions for the most meaningful and impactful changes to NYC's traffic safety.
+Through our exploration, we've unearthed patterns and insights that shed light on the complex nature of car crashes in New York City. Our findings point toward actionable insights, such as the need for targeted interventions during high-risk times of the day, the importance of considering geographical differences in traffic safety, and the potential for tailored interventions for different age groups. While our study offers detailed analysis, it is only the beginning of a broader effort to understand and address the multifaceted issue of car crashes. Future work could involve more advanced predictive modeling, such as ensemble methods or neural networks, to improve the accuracy of our predictions. Additionally, further research could explore the impact of external factors, such as weather conditions, road infrastructure, and vehicle safety features, on the likelihood of car crashes. By continuing to investigate and address the complex issue of car crashes, we can work toward a safer and more sustainable future for all road users.
+
+As it stands, some key findings from our analysis can be summarized as follows into these practical insights:
+
+\- Most crashes occur during morning and evening rush hours, suggesting the need for targeted interventions during these high-risk times.
+
+\- The borough of Manhattan shows a significantly lower count of injuries or fatalities compared to other boroughs, suggesting geographical differences in traffic safety or reporting practices
+
+\- The leading cause of car crashes is driver inattention or distraction, highlighting the need for increased awareness and possibly stricter regulations on driver attention.
+
+The next steps in this project could involve more advanced predictive modeling, such as neural networks, to improve the accuracy of our predictions. A good possible type of neural network to use would be a recurrent neural network (RNN) which is good for time series data. Additionally, ShapeFiles, which are a type of geographic information systems (GIS) file, could be used to map out the locations of car crashes and identify hotspots with a high degree of accuracy.
+
+So far, this project has revealed much but also shown us how much more there is to learn.
