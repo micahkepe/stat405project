@@ -15,7 +15,7 @@ toc-title: "Table of Contents"
 header-includes:
   - \usepackage{fancyhdr}
   - \pagestyle{fancy}
-  - \fancyhead[CO,CE]{Crash Analysis NYC- Draft 3}
+  - \fancyhead[CO,CE]{Crash Analysis NYC (Draft 3)}
   - \fancyhead[LE,RO]{\thepage}
   - \fancyfoot{}
   - \fancyfoot[LE,RO]{\thepage}
@@ -31,6 +31,7 @@ if (!require("chron")) install.packages("chron")
 if (!require("reshape2")) install.packages("reshape2")
 if (!require("rpart")) install.packages("rpart")
 if (!require("rpart.plot")) install.packages("rpart.plot")
+if (!require("sjPlot")) install.packages("sjPlot")
 
 # Load the required packages
 library(reshape2)
@@ -44,6 +45,11 @@ library(RColorBrewer)
 library(scales)
 library(rpart)
 library(rpart.plot)
+library(sjPlot)
+
+```
+
+```{r, echo=FALSE}
 
 ```
 
@@ -168,6 +174,9 @@ We plotted the frequency of car crashes per borough in NYC. The goal of this gra
 
 The borough with the least car crashes is Staten Island at around 75,000 car crashes, while the borough with the most car crashes is Brooklyn with around 450,000 car crashes. This graph gives us a better understanding of the likelihood that a car crash will occur in a certain borough. However, a consideration that is not specified is the amount of traffic through the boroughs.
 
+An important caveat for this graphic is that the population counts used to determine the percentages are from the most recent census, and we did not factor in population change across borough from 2012-2024. This affects the accuracy of the derived percentages, but the general trends are still useful for understanding the likelihood of car crashes in each borough.
+
+\pagebreak
 ### Density of Car Crashes in NYC
 
 ```{r echo=FALSE}
@@ -197,6 +206,48 @@ ggplot(cleaned_crashes_data, aes(x = LONGITUDE, y = LATITUDE)) +
 
 The heat map of car crashes in NYC shows that the highest density of car crashes occurs in the center of NYC. This is likely due to the fact that the center of NYC has the most traffic and the most people. The lowest density of car crashes occurs in the outskirts of NYC. This aligns with our intuition, as the centers of cities are typically more crowded and have more traffic. This graph gives us a better understanding of where car crashes are most likely to occur in NYC.
 
+### Pie Chart of Contributing Factors to Car Crashes
+
+```{r echo=FALSE, fig.width=10, fig.height=6}
+
+# Adjust global graphics parameters to reduce text size
+old_par <- par(cex=0.8)
+
+num_unspecified <- cleaned_crashes_data %>% 
+  filter(CONTRIBUTING.FACTOR.VEHICLE.1 == "Unspecified" | CONTRIBUTING.FACTOR.VEHICLE.1 == "") %>%
+  nrow()
+percent_unspecified <- num_unspecified / nrow(cleaned_crashes_data)
+
+top_fators_w_unspecified <- cleaned_crashes_data %>%
+  count(CONTRIBUTING.FACTOR.VEHICLE.1, sort = TRUE) %>%
+  slice_max(n = 5, order_by = n)
+
+# Create a pie chart for the top 5 specified contributing factors to car crashes
+top_factors_df <- cleaned_crashes_data %>%
+  filter(CONTRIBUTING.FACTOR.VEHICLE.1 != "Unspecified", CONTRIBUTING.FACTOR.VEHICLE.1 != "") %>%
+  count(CONTRIBUTING.FACTOR.VEHICLE.1, sort = TRUE) %>%
+  slice_max(n = 5, order_by = n)
+
+top_factors <- top_factors_df$n
+
+labels_with_percents <- top_factors_df %>%
+  mutate(percentage = n / sum(n) * 100) %>%
+  reframe(label = paste(CONTRIBUTING.FACTOR.VEHICLE.1, ":", round(percentage, 1), "%")) %>%
+  pull(label)
+
+pie(top_factors,
+    labels = labels_with_percents,
+    main = "Top 5 Specified Contributing Factors to Car Crashes",
+    col = rainbow(length(top_factors)))
+
+# Reset to original par values after plotting
+par(old_par)
+
+```
+
+Disregarding the unspecified contributing factors, the top 5 contributing factors to car crashes are: Driver Inattention/Distraction, Failure to Yield Right-of-Way, Backing Unsafely, Following Too Closely, and Other Vehicular. The pie chart shows that the top specified contributing factor to car crashes is Driver Inattention/Distraction, which accounts for 52.9% of the observed car crashes. However, an important consideration is that a large amount of the contributing factors are unspecified, which could affect the accuracy of the data. 531,539 crashes in the cleaned data set have unspecified contributing factors, which is 38% of the all crashes in the data. There was around twice as many crashes with unspecified contributing factors than the number of crashes with driver inattention as a contributing factor.
+
+\pagebreak 
 ### Histogram of Car Crashes by Time of Day
 
 ```{r echo=FALSE, fig.width=10, fig.height=6}
@@ -218,7 +269,9 @@ ggplot(cleaned_crashes_data, aes(x = as.numeric(substr(CRASH.TIME, 1, 2)))) +
 
 ```
 
-The histogram of car crashes by time of day shows that the most car crashes occur around the hours of 15:00 and 18:00. This is likely due to the fact that these are the hours when people are getting off work and are driving home. The least amount of car crashes occur around the hours of 3:00 and 4:00, which is likely due to the fact that these are the hours when people are sleeping and there is less traffic on the road. This graph gives us a better understanding of when car crashes are most likely to occur. An important consideration that is that traffic patterns may vary seasonally and by day of the week, which could affect the number of car crashes.
+The histogram of car crashes by time of day shows that the most car crashes occur around the hours of 3:00PM and 6:00PM. This is likely due to the fact that these are the hours when people are getting off work and are driving home. The least amount of car crashes occur around the hours of 3:00AM and 4:00AM, which is likely due to the fact that these are the hours when people are sleeping and there is less traffic on the road. This graph gives us a better understanding of when car crashes are most likely to occur. An important consideration that is that traffic patterns may vary seasonally and by day of the week, which could affect the number of car crashes.
+
+\pagebreak 
 
 ### Line Plot of Top 3 Contributing Factors by Time of Day
 
@@ -265,9 +318,10 @@ ggplot(factor_by_hour, aes(x = HOUR, y = Count, color = CONTRIBUTING.FACTOR.VEHI
 
 ```
 
-The scatter plot of the top 3 contributing factors by time of day show how the top factors contribute to the number of car crashes throughout the day. What can be seen is that distracted driving is consistenting the biggest factor contributing to car crashes. During hours with the most crashes, such as 8 am and 5 pm, all 3 factors reach peaks. All contributing factors show that the crash amount increases between the hours of 8 am and 5 pm and decreases outside of those hours. This graph gives us a better understanding of the relationship between time of day, number of crashes, and contributing factors.
+The scatter plot of the top 3 contributing factors by time of day show how the top factors contribute to the number of car crashes throughout the day. What can be seen is that distracted driving is consistently the biggest factor contributing to car crashes. During hours with the most crashes, such as 8:00AM and 5:00PM, all 3 factors reach peaks. All contributing factors show that the crash amount increases between the hours of 8:00AM and 5:00PM and decreases outside of those hours. This graph gives us a better understanding of the relationship between time of day, number of crashes, and contributing factors.
 
-### Temporal Density Map by Both Day of Week and Hour of Day
+\pagebreak
+### Temporal Density Maps
 
 ```{r echo=FALSE, fig.width=10, fig.height=8}
 
@@ -311,7 +365,7 @@ ggplot(heatmap_df, aes(x = HourOfDay, y = DayOfWeek, fill = Frequency)) +
 
 ```
 
-The temporal density map shows the frequency of car crashes by day of the week and hour of the day. There is an evident "safe zone" on weekdays between the hours of 1:00AM and 5:00AM. This is expected as these are not usually times where there are lots of people active. Interesting, "danger zones" are evident on weekdays between the hours of 8:00AM and 10:00AM and 4:00PM and 6:00PM. One possible explanation for this is that these are the hours when people are driving to and from work. This graph dispels the myth that most car crashes occur at night and shows that most car crashes actually occur during the day. 
+The temporal density map shows the frequency of car crashes by day of the week and hour of the day. There is an evident "safe zone" on weekdays between the hours of 1:00AM and 5:00AM. This is expected as these are not usually times where there are lots of people active. Interesting, "danger zones" are evident on weekdays between the hours of 8:00AM and 10:00AM and 4:00PM and 6:00PM. One possible explanation for this is that these are the hours when people are driving to and from work. This graph dispels the myth that most car crashes occur at night and shows that most car crashes actually occur during the day.
 
 The most damaging car crashes are of course those that result in loss of life. Since one of the primary goals of our analysis is to examine potential trends that result in fatal car crashes, we pose the following question: When are fatal car crashes more likely to occur?
 
@@ -356,7 +410,7 @@ ggplot(heatmap_df, aes(x = HourOfDay, y = DayOfWeek, fill = Frequency)) +
 
 ```
 
-This temporal density map shows the frequency of fatal car crashes by day of the week and hour of the day. Unlike the previous heatmap, there is no noticeable trend. This heatmap suggests that time during the week has no impact on instances of fatal car crashes. However, we can narrow the scope further to examnine if time of day in general influences the frequency of fatal car crashes. The following plot does just that.
+This temporal density map shows the frequency of fatal car crashes by day of the week and hour of the day. Unlike the previous heat map, there is no noticeable trend. This heat map suggests that time during the week has no impact on instances of fatal car crashes. However, we can narrow the scope further to examine if time of day in general influences the frequency of fatal car crashes. The following plot does just that.
 
 ```{r echo=FALSE, fig.width=10, fig.height=3}
 # Start with the cleaned data
@@ -384,56 +438,17 @@ ggplot(heatmap_df, aes(x = HourOfDay, y = 1, fill = Frequency)) +
         plot.title = element_text(hjust = 0.5))
 
 ```
-This temporal density map shows the frequency of fatal car crashes by only the hour of the day. This heatmap suggests that time of the day does have a significant impact on instances of fatal car crashes. In particular, fatal car crashes seem to be more likely to occur in the evening or at night. This may be due to reduced visibility at later hours. The number of fata car crashes peaks drastically between the hours of 5:00PM and 7:00PM. This is likely due to the compounding factors of reduced visbility at night and increased traffic with people leaving work. In the early morning hours between 1:00AM and 9:00AM, there are less occurances of fatal crashes. However, there does appear to be a significant number of fatal crashes that occur between the hours of 4:00AM and 6:00AM. This is in contrast to the "danger zone" observed between the hours of 8:00AM and 10:00AM in the first temporal density map. That "danger zone" was explained increased traffic as people commuted from work. Increased traffic can also partially explain the peak in fatal car crashes between 4:00AM and 6:00AM. However, reduced visibility in early morning hours likely compounded the risks.
 
-The three temporal density plots above show that car crashes are more likely to occur during hours of high traffic when people are commuting to and from work. However, fatal car crashes are more likely caused by reduced visbility during darker hours, although amount of traffic is still a partially contributing factor.
+This temporal density map shows the frequency of fatal car crashes by only the hour of the day. This heat map suggests that time of the day does have a significant impact on instances of fatal car crashes. In particular, fatal car crashes seem to be more likely to occur in the evening or at night. This may be due to reduced visibility at later hours. The number of fatal car crashes peaks drastically between the hours of 5:00PM and 7:00PM. This is likely due to the compounding factors of reduced visibility at night and increased traffic with people leaving work. In the early morning hours between 1:00AM and 9:00AM, there are less occurrences of fatal crashes. However, there does appear to be a significant number of fatal crashes that occur between the hours of 4:00AM and 6:00AM. This is in contrast to the "danger zone" observed between the hours of 8:00AM and 10:00AM in the first temporal density map. That "danger zone" was explained increased traffic as people commuted from work. Increased traffic can also partially explain the peak in fatal car crashes between 4:00AM and 6:00AM. However, reduced visibility in early morning hours likely compounded the risks.
 
-### Pie Chart of Contributing Factors to Car Crashes
+The three temporal density plots above show that car crashes are more likely to occur during hours of high traffic when people are commuting to and from work. However, fatal car crashes are more likely caused by reduced visibility during darker hours, although amount of traffic is still a partially contributing factor.
 
-```{r echo=FALSE, fig.width=10, fig.height=6}
-
-# Adjust global graphics parameters to reduce text size
-old_par <- par(cex=0.8)
-
-num_unspecified <- cleaned_crashes_data %>% 
-  filter(CONTRIBUTING.FACTOR.VEHICLE.1 == "Unspecified" | CONTRIBUTING.FACTOR.VEHICLE.1 == "") %>%
-  nrow()
-percent_unspecified <- num_unspecified / nrow(cleaned_crashes_data)
-
-top_fators_w_unspecified <- cleaned_crashes_data %>%
-  count(CONTRIBUTING.FACTOR.VEHICLE.1, sort = TRUE) %>%
-  slice_max(n = 5, order_by = n)
-
-# Create a pie chart for the top 5 specified contributing factors to car crashes
-top_factors_df <- cleaned_crashes_data %>%
-  filter(CONTRIBUTING.FACTOR.VEHICLE.1 != "Unspecified", CONTRIBUTING.FACTOR.VEHICLE.1 != "") %>%
-  count(CONTRIBUTING.FACTOR.VEHICLE.1, sort = TRUE) %>%
-  slice_max(n = 5, order_by = n)
-
-top_factors <- top_factors_df$n
-
-labels_with_percents <- top_factors_df %>%
-  mutate(percentage = n / sum(n) * 100) %>%
-  reframe(label = paste(CONTRIBUTING.FACTOR.VEHICLE.1, ":", round(percentage, 1), "%")) %>%
-  pull(label)
-
-pie(top_factors,
-    labels = labels_with_percents,
-    main = "Top 5 Specified Contributing Factors to Car Crashes",
-    col = rainbow(length(top_factors)))
-
-# Reset to original par values after plotting
-par(old_par)
-
-```
-
-Disregarding the unspecified contributing factors, the top 5 contributing factors to car crashes are: Driver Inattention/Distraction, Failure to Yield Right-of-Way, Backing Unsafely, Following Too Closely, and Other Vehicular. The pie chart shows that the top specified contributing factor to car crashes is Driver Inattention/Distraction, which accounts for 52.9% of the observed car crashes. However, an important consideration is that a large amount of the contributing factors are unspecified, which could affect the accuracy of the data. 531,539 crashes in the cleaned data set have unspecified contributing factors, which is 38% of the all crashes in the data. There was around twice as many crashes with unspecified contributing factors than the number of crashes with driver inattention as a contributing factor.
-
+\pagebreak
 ### Stack Area Plot of Contributing Factors and Crash Count by Year
 
 Now that we have an idea of which contributing factors to crashes are most common, we pose the following question: How have the frequency of contributing factors to crashes changed over time?
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=10, fig.height=6}
 
 # Use a pipeline to create the stacked area plot data
 agg_data <- cleaned_crashes_data %>%
@@ -469,16 +484,19 @@ ggplot(agg_data, aes(x = YEAR, y = COUNT,
         legend.title = element_text(size = 8),
         legend.text = element_text(size = 6),
         legend.key.size = unit(0.5, "cm"),
+        axis.text.x = element_text(size = 8, angle = 45, hjust = 1),
         legend.margin = margin(0, 0, 0, 0),
         panel.grid.major = element_line(colour = "grey"),
         panel.grid.minor = element_line(colour = "lightgrey"),
         panel.background = element_rect(fill = "white")) +
-  scale_x_continuous(breaks = seq(min(agg_data$YEAR), max(agg_data$YEAR), by = 2))
+  scale_x_continuous(breaks = seq(min(agg_data$YEAR), max(agg_data$YEAR), by = 2)) +
+  facet_wrap(~ CONTRIBUTING.FACTOR.VEHICLE.1, ncol = 3)
 
 ```
 
-The stacked area plot of the top 5 contributing factors to car crashes by year shows how the top contributing factors changed over the years. What can be seen is that the number of crashes peaked in 2018 at around 67500 crashes and that driver inattention/distraction grew rapidly from 2012 to 2018. Then, all contributing factors started to decrease 2020 to 2024 most likely due to covid and stay at home orders. This graph gives us a better understanding of the relationship between the year, number of crashes, and contributing factors.
+The stacked area plot of the top 5 contributing factors to car crashes by year shows how the top contributing factors changed over the years. What can be seen is that the number of crashes peaked in 2018 at around 67,500 crashes and that driver inattention/distraction grew rapidly from 2012 to 2018. Then, all contributing factors started to decrease 2020 to 2024 most likely due to COVID and stay-at-home orders. This graph gives us a better understanding of the relationship between the year, number of crashes, and contributing factors.
 
+\pagebreak
 ### Jitter Plot of Fatalities and Injuries by Contributing Factor
 
 ```{r echo=FALSE}
@@ -511,15 +529,19 @@ ggplot(data = filtered_data) +
 
 The jitter plot shows the number of people injured or killed in crashes caused by the top 5 factors. The plot shows that the most common contributing factors to crashes are also correlated with more violent crashes. Driver inattention or distraction caused the most violent crashes. This plot gives more insight into how different contributing factors of crashes relate to injuries and deaths.
 
-### Key Findings
+\pagebreak
+### Key Findings From the Exploratory Data Analysis
 
 **Borough-wise Crash Frequency:** We found that some boroughs experience more crashes than others, with Brooklyn leading the chart. This could relate to population density, traffic flow, or other urban factors.
 
 **Crash Density and Landmarks:** A map showing where crashes happen most frequently revealed that central areas with heavy traffic and significant landmarks are hotspots for incidents.
 
-**Time of Day Analysis:** Crashes peak during evening rush hours, suggesting that the end-of-day commute might be particularly hazardous.
+**Time of Day Analysis:** Crashes peak during evening rush hours, suggesting that the end-of-day commute might be particularly hazardous. Fatal crashes are prominent during the evening and the night, when darkness causes reduced visibility.
 
 **Contributing Factors:** Distracted driving emerged as a leading cause of accidents, highlighting the need for increased awareness and possibly stricter regulations on driver attention.
+
+**Temporal Trends:** The frequency of crashes caused by the top 5 contributing factors has been decreasing since 2020, which could be due to the COVID-19 pandemic.
+
 
 \pagebreak
 
@@ -561,11 +583,11 @@ predictions <- predict(tree_model, dt_test_data)
 
 # Calculate MAE
 mae <- mean(abs(predictions - dt_test_data$NUMBER.OF.PERSONS.KILLED))
-print(paste("Mean Absolute Error (MAE):", mae))
+cat("Mean Absolute Error (MAE):", mae, "\n")
 
-# Calculate RMSE
+# # Calculate RMSE
 rmse <- sqrt(mean((predictions - dt_test_data$NUMBER.OF.PERSONS.KILLED)^2))
-print(paste("Root Mean Squared Error (RMSE):", rmse))
+cat("Root Mean Squared Error (RMSE):", rmse, "\n")
 
 ```
 
@@ -632,7 +654,7 @@ final_merged_dataset <- final_merged_dataset %>%
 
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, results='asis'}
 
 # transmutate CRASH.TIME to 4-hour intervals to reduce the number of levels
 glm_data <- final_merged_dataset %>%
@@ -675,10 +697,12 @@ glm_model <- glm(NUMBER.OF.PERSONS.INJURED + NUMBER.OF.PERSONS.KILLED ~
                  data = subsampled_data,
                  family = poisson)
 
-# Summarize the model
-summary(glm_model)
+
+# Display the summary of the fitted model
+tab_model(glm_model)
 
 ```
+
 
 Generalized Linear Models (GLMs) are an extension of traditional linear regression models that allow for response variables to have error distributions other than the normal distribution. GLMs are used to model relationships between a scalar-dependent variable and one or more independent variables. The model consists of three components: (1) the random component, which specifies the distribution of the response variable; (2) the systematic component, which is the linear combination of the predictors; and (3) the link function, which connects the mean of the distribution of the response variable to the linear predictor. In this analysis, we utilize a Poisson distribution, appropriate for count data such as the number of people injured or killed in car crashes. The Poisson distribution models data where events occur independently within a fixed interval and assumes that the number of events is proportional to the length of the interval.
 
@@ -699,6 +723,8 @@ As it stands, some key findings from our analysis can be summarized as follows i
 \- The borough of Manhattan shows a significantly lower count of injuries or fatalities compared to other boroughs, suggesting geographical differences in traffic safety or reporting practices
 
 \- The leading cause of car crashes is driver inattention or distraction, highlighting the need for increased awareness and possibly stricter regulations on driver attention.
+
+\- Fatal crashes are prominent during the evening and the night, when darkness causes reduced visibility.
 
 The next steps in this project could involve more advanced predictive modeling, such as neural networks, to improve the accuracy of our predictions. A good possible type of neural network to use would be a recurrent neural network (RNN) which is good for time series data. Additionally, ShapeFiles, which are a type of geographic information systems (GIS) file, could be used to map out the locations of car crashes and identify hotspots with a high degree of accuracy.
 
