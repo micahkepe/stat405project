@@ -51,10 +51,6 @@ library(sjPlot)
 
 ```{r, echo=FALSE}
 
-```
-
-```{r, echo=FALSE}
-
 # Load the data sets
 # Primary data set of car crashes
 data_crashes <- read.csv("../data/Motor_Vehicle_Collisions_-_Crashes_20240213.csv")
@@ -177,6 +173,7 @@ The borough with the least car crashes is Staten Island at around 75,000 car cra
 An important caveat for this graphic is that the population counts used to determine the percentages are from the most recent census, and we did not factor in population change across borough from 2012-2024. This affects the accuracy of the derived percentages, but the general trends are still useful for understanding the likelihood of car crashes in each borough.
 
 \pagebreak
+
 ### Density of Car Crashes in NYC
 
 ```{r echo=FALSE}
@@ -247,7 +244,8 @@ par(old_par)
 
 Disregarding the unspecified contributing factors, the top 5 contributing factors to car crashes are: Driver Inattention/Distraction, Failure to Yield Right-of-Way, Backing Unsafely, Following Too Closely, and Other Vehicular. The pie chart shows that the top specified contributing factor to car crashes is Driver Inattention/Distraction, which accounts for 52.9% of the observed car crashes. However, an important consideration is that a large amount of the contributing factors are unspecified, which could affect the accuracy of the data. 531,539 crashes in the cleaned data set have unspecified contributing factors, which is 38% of the all crashes in the data. There was around twice as many crashes with unspecified contributing factors than the number of crashes with driver inattention as a contributing factor.
 
-\pagebreak 
+\pagebreak
+
 ### Histogram of Car Crashes by Time of Day
 
 ```{r echo=FALSE, fig.width=10, fig.height=6}
@@ -271,7 +269,7 @@ ggplot(cleaned_crashes_data, aes(x = as.numeric(substr(CRASH.TIME, 1, 2)))) +
 
 The histogram of car crashes by time of day shows that the most car crashes occur around the hours of 3:00PM and 6:00PM. This is likely due to the fact that these are the hours when people are getting off work and are driving home. The least amount of car crashes occur around the hours of 3:00AM and 4:00AM, which is likely due to the fact that these are the hours when people are sleeping and there is less traffic on the road. This graph gives us a better understanding of when car crashes are most likely to occur. An important consideration that is that traffic patterns may vary seasonally and by day of the week, which could affect the number of car crashes.
 
-\pagebreak 
+\pagebreak
 
 ### Line Plot of Top 3 Contributing Factors by Time of Day
 
@@ -321,6 +319,7 @@ ggplot(factor_by_hour, aes(x = HOUR, y = Count, color = CONTRIBUTING.FACTOR.VEHI
 The scatter plot of the top 3 contributing factors by time of day show how the top factors contribute to the number of car crashes throughout the day. What can be seen is that distracted driving is consistently the biggest factor contributing to car crashes. During hours with the most crashes, such as 8:00AM and 5:00PM, all 3 factors reach peaks. All contributing factors show that the crash amount increases between the hours of 8:00AM and 5:00PM and decreases outside of those hours. This graph gives us a better understanding of the relationship between time of day, number of crashes, and contributing factors.
 
 \pagebreak
+
 ### Temporal Density Maps
 
 ```{r echo=FALSE, fig.width=10, fig.height=8}
@@ -444,6 +443,7 @@ This temporal density map shows the frequency of fatal car crashes by only the h
 The three temporal density plots above show that car crashes are more likely to occur during hours of high traffic when people are commuting to and from work. However, fatal car crashes are more likely caused by reduced visibility during darker hours, although amount of traffic is still a partially contributing factor.
 
 \pagebreak
+
 ### Stack Area Plot of Contributing Factors and Crash Count by Year
 
 Now that we have an idea of which contributing factors to crashes are most common, we pose the following question: How have the frequency of contributing factors to crashes changed over time?
@@ -497,6 +497,7 @@ ggplot(agg_data, aes(x = YEAR, y = COUNT,
 The stacked area plot of the top 5 contributing factors to car crashes by year shows how the top contributing factors changed over the years. What can be seen is that the number of crashes peaked in 2018 at around 67,500 crashes and that driver inattention/distraction grew rapidly from 2012 to 2018. Then, all contributing factors started to decrease 2020 to 2024 most likely due to COVID and stay-at-home orders. This graph gives us a better understanding of the relationship between the year, number of crashes, and contributing factors.
 
 \pagebreak
+
 ### Jitter Plot of Fatalities and Injuries by Contributing Factor
 
 ```{r echo=FALSE}
@@ -530,6 +531,7 @@ ggplot(data = filtered_data) +
 The jitter plot shows the number of people injured or killed in crashes caused by the top 5 factors. The plot shows that the most common contributing factors to crashes are also correlated with more violent crashes. Driver inattention or distraction caused the most violent crashes. This plot gives more insight into how different contributing factors of crashes relate to injuries and deaths.
 
 \pagebreak
+
 ### Key Findings From the Exploratory Data Analysis
 
 **Borough-wise Crash Frequency:** We found that some boroughs experience more crashes than others, with Brooklyn leading the chart. This could relate to population density, traffic flow, or other urban factors.
@@ -541,7 +543,6 @@ The jitter plot shows the number of people injured or killed in crashes caused b
 **Contributing Factors:** Distracted driving emerged as a leading cause of accidents, highlighting the need for increased awareness and possibly stricter regulations on driver attention.
 
 **Temporal Trends:** The frequency of crashes caused by the top 5 contributing factors has been decreasing since 2020, which could be due to the COVID-19 pandemic.
-
 
 \pagebreak
 
@@ -702,7 +703,6 @@ glm_model <- glm(NUMBER.OF.PERSONS.INJURED + NUMBER.OF.PERSONS.KILLED ~
 tab_model(glm_model)
 
 ```
-
 
 Generalized Linear Models (GLMs) are an extension of traditional linear regression models that allow for response variables to have error distributions other than the normal distribution. GLMs are used to model relationships between a scalar-dependent variable and one or more independent variables. The model consists of three components: (1) the random component, which specifies the distribution of the response variable; (2) the systematic component, which is the linear combination of the predictors; and (3) the link function, which connects the mean of the distribution of the response variable to the linear predictor. In this analysis, we utilize a Poisson distribution, appropriate for count data such as the number of people injured or killed in car crashes. The Poisson distribution models data where events occur independently within a fixed interval and assumes that the number of events is proportional to the length of the interval.
 
