@@ -63,5 +63,7 @@ rsconnect/
 .AppleDouble
 .LSOverride
 
-# Don't track csv files since user will extract them from the zip file
-*.csv
+# Data (contributors should populate from Dropbox link)
+data/
+
+
