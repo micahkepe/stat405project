@@ -10,13 +10,13 @@ To run the code in this repository, you will need to have the following installe
 
 ## Data Setup
 
-The link to the data used can be found [here](https://www.dropbox.com/scl/fo/ure76b4mdginkf0b2b235/h?rlkey=4h36pnk51rj48v71ng6kbhv4d&dl=0)
+The link to the SQLite database used can be found [here](https://www.dropbox.com/scl/fo/ure76b4mdginkf0b2b235/h?rlkey=4h36pnk51rj48v71ng6kbhv4d&dl=0)
 
-**Note:** This link is read-only.
-
-To populate your local repository with the data, extract the `data.zip` file in the `data` folder. This will create a folder called `data` with the three `.csv` files inside. Move the contents of the `data` folder to the `data` folder in the root of the repository and delete the empty `data` folder.
+To populate your local repository with the database, download the database from the link above and move it to the `data` folder in the root of the repository. The database should be named `nyc_crash_data.db`. If the `data` folder does not exist, create it in the root of the repository.
 
 Additionally in the Dropbox, there is a `shapefiles_and_basemap.zip` files containing the shapefiles and basemap used in the project. Extract the contents of the `shapefiles_and_basemap.zip` file into the `data` folder in the root of the repository. This will create a folder called `shapefiles_and_basemap` with the shapefiles and basemap inside. Again, move the contents of the `shapefiles_and_basemap` folder to the `data` folder in the root of the repository and delete the empty `shapefiles_and_basemap` folder.
+
+The original CSV files used to create the database can be found in the `csv-files.zip` folder in the Dropbox. These files are not necessary to run the code, but are included for reference.
 
 ## About the Data
 
