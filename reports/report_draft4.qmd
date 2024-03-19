@@ -1,5 +1,5 @@
 ---
-title: "Group 3: Crash Analysis NYC- Draft 3"
+title: "Group 3: Crash Analysis NYC- Draft 4"
 author: "Kevin Lei, Micah Kepe, Zachary Kepe, Giulia Costantini"
 date: "2024-02-27"
 format:
@@ -15,7 +15,7 @@ toc-title: "Table of Contents"
 header-includes:
   - \usepackage{fancyhdr}
   - \pagestyle{fancy}
-  - \fancyhead[CO,CE]{Crash Analysis NYC (Draft 3)}
+  - \fancyhead[CO,CE]{Crash Analysis NYC (Draft 4)}
   - \fancyhead[LE,RO]{\thepage}
   - \fancyfoot{}
   - \fancyfoot[LE,RO]{\thepage}
