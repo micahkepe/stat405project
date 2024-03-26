@@ -34,6 +34,7 @@ if (!require("rpart.plot")) install.packages("rpart.plot")
 if (!require("sjPlot")) install.packages("sjPlot")
 if (!require("DBI")) install.packages("DBI")
 if (!require("RSQLite")) install.packages("RSQLite")
+if (!require("sqldf")) install.packages("sqldf")
 
 # Load the required packages
 library(reshape2)
@@ -50,6 +51,7 @@ library(rpart.plot)
 library(sjPlot)
 library(DBI)
 library(RSQLite)
+library(sqldf)
 
 ```
 
@@ -60,7 +62,15 @@ library(RSQLite)
 con <- dbConnect(RSQLite::SQLite(), "../data/nyc_crashes.db")
 
 # Load the primary data set of car crashes
-data_crashes <- dbGetQuery(con, "SELECT * FROM crashes")
+crash_query <- "SELECT * 
+                FROM crashes 
+                WHERE BOROUGH IS NOT NULL AND BOROUGH != ''
+                  AND LATITUDE IS NOT NULL AND LATITUDE > 40 AND LATITUDE < 41
+                  AND LONGITUDE IS NOT NULL AND LONGITUDE < -73 AND LONGITUDE > -75
+                  AND 'CRASH.DATE' IS NOT NULL
+                  AND 'CRASH.TIME' IS NOT NULL"
+
+data_crashes <- dbGetQuery(con, crash_query)
 
 # Load the secondary data set of people involved in car crashes
 data_people <- dbGetQuery(con, "SELECT * FROM people")
@@ -68,8 +78,6 @@ data_people <- dbGetQuery(con, "SELECT * FROM people")
 # Load the secondary data set of vehicles involved in car crashes
 data_vehicles <- dbGetQuery(con, "SELECT * FROM vehicles")
 
-# Close the connection to the SQLite database
-dbDisconnect(con)
 
 ```
 
@@ -93,12 +101,6 @@ The NYC OpenData dataset contains details of motor vehicle collision occurrences
 
 # Perform data cleaning and pre-processing w/ dplyr 
 cleaned_crashes_data <- data_crashes %>%
-  # Remove rows with NAs in crucial columns, filter out empty strings for BOROUGH
-  filter(!is.na(BOROUGH) & BOROUGH != "",
-         !is.na(LATITUDE) & LATITUDE > 40 & LATITUDE < 41,
-         !is.na(LONGITUDE) & LONGITUDE < -73 & LONGITUDE > -75,
-         !is.na(CRASH.DATE),
-         !is.na(CRASH.TIME)) %>%
   # Convert CRASH.DATE to Date format and CRASH.TIME to a more standard format
   mutate(
     CRASH.DATE = mdy(CRASH.DATE),  # Using lubridate for flexible date parsing
@@ -379,6 +381,7 @@ The temporal density map shows the frequency of car crashes by day of the week a
 The most damaging car crashes are of course those that result in loss of life. Since one of the primary goals of our analysis is to examine potential trends that result in fatal car crashes, we pose the following question: When are fatal car crashes more likely to occur?
 
 ```{r echo=FALSE, fig.width=10, fig.height=8}
+
 # Start with the cleaned data
 analysis_data <- cleaned_crashes_data %>% filter(NUMBER.OF.PERSONS.KILLED > 0)
 
@@ -641,7 +644,6 @@ data_vehicle_cleaned <- data_vehicles %>%
 data_person_cleaned <- data_people %>%
   select(COLLISION_ID, PERSON_TYPE, PERSON_AGE, PERSON_SEX, UNIQUE_ID)
 
-
 # Merge the three datasets on the common key COLLISION_ID
 crash_vehicle_merged <- merge(data_crash_cleaned, data_vehicle_cleaned, by = "COLLISION_ID")
 
@@ -739,3 +741,11 @@ As it stands, some key findings from our analysis can be summarized as follows i
 The next steps in this project could involve more advanced predictive modeling, such as neural networks, to improve the accuracy of our predictions. A good possible type of neural network to use would be a recurrent neural network (RNN) which is good for time series data. Additionally, ShapeFiles, which are a type of geographic information systems (GIS) file, could be used to map out the locations of car crashes and identify hotspots with a high degree of accuracy.
 
 So far, this project has revealed much but also shown us how much more there is to learn.
+
+
+```{r, include=FALSE, echo=FALSE}
+
+# Close the connection to the SQLite database
+dbDisconnect(con)
+
+```
