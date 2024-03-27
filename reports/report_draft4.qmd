@@ -73,11 +73,12 @@ crash_query <- "SELECT *
 data_crashes <- dbGetQuery(con, crash_query)
 
 # Load the secondary data set of people involved in car crashes
-data_people <- dbGetQuery(con, "SELECT * FROM people")
+data_people <- dbGetQuery(con, "SELECT * FROM people
+                                WHERE COLLISION_ID IN (SELECT COLLISION_ID FROM crashes)")
 
 # Load the secondary data set of vehicles involved in car crashes
-data_vehicles <- dbGetQuery(con, "SELECT * FROM vehicles")
-
+data_vehicles <- dbGetQuery(con, "SELECT * FROM vehicles
+                                  WHERE COLLISION_ID IN (SELECT COLLISION_ID FROM crashes)")
 
 ```
 
@@ -99,7 +100,7 @@ The NYC OpenData dataset contains details of motor vehicle collision occurrences
 
 ```{r echo=FALSE}
 
-# Perform data cleaning and pre-processing w/ dplyr 
+# Perform data cleaning and pre-processing
 cleaned_crashes_data <- data_crashes %>%
   # Convert CRASH.DATE to Date format and CRASH.TIME to a more standard format
   mutate(
@@ -148,7 +149,7 @@ ordered_crash_percentage <- crash_percentage[match(names(borough_cleaned), names
 # Set margins (bottom, left, top, right)
 par(mar=c(7, 5, 4, 2) + 0.1, mgp=c(4, 1, 0))
 
-colors <- c("dodgerblue", "orange", "green3", "red3", "purple3")
+colors <- c("#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD")
 
 # Calculate the bar midpoints to place x-axis labels correctly
 bar_midpoints <- barplot(ordered_crash_percentage,
@@ -425,8 +426,6 @@ ggplot(heatmap_df, aes(x = HourOfDay, y = DayOfWeek, fill = Frequency)) +
 This temporal density map shows the frequency of fatal car crashes by day of the week and hour of the day. Unlike the previous heat map, there is no noticeable trend. This heat map suggests that time during the week has no impact on instances of fatal car crashes. However, we can narrow the scope further to examine if time of day in general influences the frequency of fatal car crashes. The following plot does just that.
 
 ```{r echo=FALSE, fig.width=10, fig.height=3}
-# Start with the cleaned data
-analysis_data <- cleaned_crashes_data %>% filter(NUMBER.OF.PERSONS.KILLED > 0)
 
 # Extract the hour of the day from CRASH.TIME
 analysis_data$HourOfDay <- substr(analysis_data$CRASH.TIME, 1, 2)
@@ -477,6 +476,7 @@ agg_data <- cleaned_crashes_data %>%
                                               "Passing Too Closely")) %>%
   ungroup()
 
+
 # Create a color palette for the plot
 num_factors <- length(top_factors)
 colors <- colorRampPalette(brewer.pal(min(num_factors, 9), "Set1"))(num_factors)
@@ -516,13 +516,17 @@ The stacked area plot of the top 5 contributing factors to car crashes by year s
 ```{r echo=FALSE}
 
 # filter the data to only include crashes with injuries or fatalities
-filtered_data <- cleaned_crashes_data %>%
-  filter(NUMBER.OF.PERSONS.INJURED + NUMBER.OF.PERSONS.KILLED > 0,
-         CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
-                                               "Failure to Yield Right-of-Way",
-                                               "Following Too Closely",
-                                               "Other Vehicular",
-                                               "Passing Too Closely"))
+filtered_data <- sqldf('SELECT * FROM cleaned_crashes_data cd
+                        WHERE 
+                          cd.[NUMBER.OF.PERSONS.INJURED] + 
+                            cd.[NUMBER.OF.PERSONS.KILLED] > 0
+                          AND cd.[CONTRIBUTING.FACTOR.VEHICLE.1] IN 
+                            ("Driver Inattention/Distraction",
+                              "Failure to Yield Right-of-Way",
+                              "Following Too Closely",
+                              "Other Vehicular",
+                              "Passing Too Closely")')
+
 
 # Create the jitter plot for the top 5 contributing factors
 ggplot(data = filtered_data) +
@@ -566,7 +570,9 @@ The jitter plot shows the number of people injured or killed in crashes caused b
 ```{r echo=FALSE}
 
 # Merge the two data sets on the common key COLLISION_ID
-people_crashes_merged <- merge(cleaned_crashes_data, data_people, by = "COLLISION_ID")
+people_crashes_merged <- sqldf('SELECT * FROM cleaned_crashes_data cd
+                                JOIN data_people dp
+                                ON cd.COLLISION_ID = dp.COLLISION_ID')
 
 ```
 
@@ -574,7 +580,8 @@ people_crashes_merged <- merge(cleaned_crashes_data, data_people, by = "COLLISIO
 
 # Prepare the data for modeling
 dt_model_data <- people_crashes_merged %>%
-  select(BOROUGH, CRASH.TIME, PERSON_AGE, NUMBER.OF.PERSONS.KILLED, PERSON_TYPE) %>%
+  select(BOROUGH, CRASH.TIME, PERSON_AGE, 
+         NUMBER.OF.PERSONS.KILLED, PERSON_TYPE) %>%
   mutate(CRASH.TIME = as.numeric(substr(CRASH.TIME, 1, 2))) %>%
   mutate(PERSON_AGE = as.numeric(PERSON_AGE)) %>%
   mutate_at(vars(BOROUGH, PERSON_TYPE), as.factor) %>%
@@ -624,7 +631,7 @@ rpart.plot(tree_model,
 
 Before interpretting the decision tree, it is important to understand the theoretical underpinnings of the model. Decision trees are a type of supervised learning algorithm that is mostly used in classification problems. It works for both categorical and continuous input and output variables. The goal of using a decision tree is to create a model that predicts the value of a target variable by learning simple decision rules inferred from the data features. The decision tree model is a flowchart-like structure in which each internal node represents a test on an attribute, each branch represents the outcome of the test, and each leaf node represents a class label. The paths from the root to the leaf represent classification rules. Each branch represents a choice or condition leading to different outcomes.
 
-In this case, the decision tree model was trained to predict the number of people killed in car crashes based on the following features: BOROUGH, PERSON_TYPE, CRASH.TIME, and PERSON_AGE. The model was trained on 70% of the data and tested on the remaining 30%. The model achieved a Mean Absolute Error (MAE) of 0.00374560069164159 and a Root Mean Squared Error (RMSE) of 0.052475580656655. The decision tree model is visualized above. The model is quite complex and difficult to interpret, but it is able to predict the number of people killed in car crashes with a high degree of accuracy. Most likely the model is overfitting, and the complexity of the model is not necessary for the task at hand. However, the model is a good starting point for predicting the number of people killed in car crashes.
+In this case, the decision tree model was trained to predict the number of people killed in car crashes based on the following features: BOROUGH, PERSON_TYPE, CRASH.TIME, and PERSON_AGE. The model was trained on 70% of the data and tested on the remaining 30%. The model achieved a Mean Absolute Error (MAE) of 0.003833112 and a Root Mean Squared Error (RMSE) of 0.05435656. The decision tree model is visualized above. The model is quite complex and difficult to interpret, but it is able to predict the number of people killed in car crashes with a high degree of accuracy. Most likely the model is overfitting, and the complexity of the model is not necessary for the task at hand. However, the model is a good starting point for predicting the number of people killed in car crashes.
 
 \pagebreak
 
@@ -636,34 +643,44 @@ In this case, the decision tree model was trained to predict the number of peopl
 
 # Select the relevant columns for the model from each dataset
 data_crash_cleaned <- data_crashes %>%
-  select(COLLISION_ID, CRASH.DATE, CRASH.TIME, BOROUGH, LATITUDE, LONGITUDE, NUMBER.OF.PERSONS.INJURED, NUMBER.OF.PERSONS.KILLED)
+  select(COLLISION_ID, CRASH.DATE, CRASH.TIME, BOROUGH, LATITUDE, LONGITUDE, 
+         NUMBER.OF.PERSONS.INJURED, NUMBER.OF.PERSONS.KILLED)
 
 data_vehicle_cleaned <- data_vehicles %>%
-  select(COLLISION_ID, VEHICLE_TYPE, VEHICLE_YEAR, DRIVER_SEX, STATE_REGISTRATION)
+  select(COLLISION_ID, VEHICLE_TYPE, VEHICLE_YEAR, 
+         DRIVER_SEX, STATE_REGISTRATION)
 
 data_person_cleaned <- data_people %>%
   select(COLLISION_ID, PERSON_TYPE, PERSON_AGE, PERSON_SEX, UNIQUE_ID)
 
 # Merge the three datasets on the common key COLLISION_ID
-crash_vehicle_merged <- merge(data_crash_cleaned, data_vehicle_cleaned, by = "COLLISION_ID")
+crash_vehicle_merged <- merge(data_crash_cleaned, data_vehicle_cleaned, 
+                              by = "COLLISION_ID")
 
-# Merge the merged dataset with the person dataset on the common keys COLLISION_ID and VEHICLE_ID
-final_merged_dataset <- merge(crash_vehicle_merged, data_person_cleaned, by = "COLLISION_ID")
+# Merge the merged dataset with the person dataset on the common keys 
+# COLLISION_ID and VEHICLE_ID
+final_merged_dataset <- merge(crash_vehicle_merged, data_person_cleaned, 
+                              by = "COLLISION_ID")
 
-# Handle missing values
-final_merged_dataset <- final_merged_dataset %>%
-  filter(!is.na(BOROUGH) & BOROUGH != "",
-         !is.na(LATITUDE) & LATITUDE > 40 & LATITUDE < 41,
-         !is.na(LONGITUDE) & LONGITUDE < -73 & LONGITUDE > -75,
-         !is.na(CRASH.DATE),
-         !is.na(CRASH.TIME),
-         !is.na(NUMBER.OF.PERSONS.INJURED),
-         !is.na(NUMBER.OF.PERSONS.KILLED),
-         !is.na(VEHICLE_TYPE),
-         !is.na(VEHICLE_YEAR),
-         !is.na(DRIVER_SEX),
-         !is.na(PERSON_AGE),
-         !is.na(UNIQUE_ID))
+# # Handle missing values
+final_merged_dataset <- sqldf('SELECT * FROM final_merged_dataset fmd
+                               WHERE
+                                 fmd.BOROUGH IS NOT NULL AND 
+                                 fmd.BOROUGH != "" AND
+                                 fmd.LATITUDE IS NOT NULL AND 
+                                 fmd.LATITUDE > 40 AND fmd.LATITUDE < 41 AND
+                                 fmd.LONGITUDE IS NOT NULL AND 
+                                 fmd.LONGITUDE < -73 AND fmd.LONGITUDE > -75 AND
+                                 fmd.[CRASH.DATE] IS NOT NULL AND
+                                 fmd.[CRASH.TIME] IS NOT NULL AND
+                                 fmd.[NUMBER.OF.PERSONS.INJURED] IS NOT NULL AND
+                                 fmd.[NUMBER.OF.PERSONS.KILLED] IS NOT NULL AND
+                                 fmd.VEHICLE_TYPE IS NOT NULL AND
+                                 fmd.VEHICLE_YEAR IS NOT NULL AND
+                                 fmd.[DRIVER_SEX] IS NOT NULL AND
+                                 fmd.[PERSON_AGE] IS NOT NULL AND
+                                 fmd.[UNIQUE_ID] IS NOT NULL')
+
 
 ```
 
