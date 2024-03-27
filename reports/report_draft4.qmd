@@ -223,9 +223,10 @@ The heat map of car crashes in NYC shows that the highest density of car crashes
 # Adjust global graphics parameters to reduce text size
 old_par <- par(cex=0.8)
 
-num_unspecified <- cleaned_crashes_data %>% 
-  filter(CONTRIBUTING.FACTOR.VEHICLE.1 == "Unspecified" | CONTRIBUTING.FACTOR.VEHICLE.1 == "") %>%
-  nrow()
+num_unspecified <- sqldf("SELECT COUNT(*) FROM cleaned_crashes_data 
+                         WHERE [CONTRIBUTING.FACTOR.VEHICLE.1] = 'Unspecified' 
+                            OR [CONTRIBUTING.FACTOR.VEHICLE.1] = ''")
+
 percent_unspecified <- num_unspecified / nrow(cleaned_crashes_data)
 
 top_fators_w_unspecified <- cleaned_crashes_data %>%
@@ -384,7 +385,8 @@ The most damaging car crashes are of course those that result in loss of life. S
 ```{r echo=FALSE, fig.width=10, fig.height=8}
 
 # Start with the cleaned data
-analysis_data <- cleaned_crashes_data %>% filter(NUMBER.OF.PERSONS.KILLED > 0)
+analysis_data <- sqldf('SELECT * FROM cleaned_crashes_data 
+                        WHERE [NUMBER.OF.PERSONS.KILLED] > 0')
 
 # Directly extract day of the week from CRASH.DATE
 analysis_data$DayOfWeek <- weekdays(analysis_data$CRASH.DATE, abbreviate = FALSE)
@@ -464,24 +466,25 @@ Now that we have an idea of which contributing factors to crashes are most commo
 
 # Use a pipeline to create the stacked area plot data
 agg_data <- cleaned_crashes_data %>%
-  mutate(YEAR = as.numeric(format(as.Date(CRASH.DATE, "%m/%d/%Y"), "%Y"))) %>%
-  filter(CONTRIBUTING.FACTOR.VEHICLE.1 != "Unspecified" &
-           CONTRIBUTING.FACTOR.VEHICLE.1 != "") %>%
-  group_by(YEAR, CONTRIBUTING.FACTOR.VEHICLE.1) %>%
-  summarise(COUNT = n(), .groups = "drop") %>%
-  filter(CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
-                                              "Failure to Yield Right-of-Way",
-                                              "Following Too Closely",
-                                              "Other Vehicular",
-                                              "Passing Too Closely")) %>%
-  ungroup()
+  mutate(YEAR = as.numeric(format(as.Date(CRASH.DATE, "%m/%d/%Y"), "%Y"))) 
 
+agg_data <- sqldf('SELECT YEAR, [CONTRIBUTING.FACTOR.VEHICLE.1], COUNT(*) AS COUNT
+                   FROM agg_data
+                   WHERE [CONTRIBUTING.FACTOR.VEHICLE.1] != "Unspecified" 
+                      AND [CONTRIBUTING.FACTOR.VEHICLE.1] != ""
+                      AND [CONTRIBUTING.FACTOR.VEHICLE.1] IN 
+                        ("Driver Inattention/Distraction",
+                         "Failure to Yield Right-of-Way",
+                         "Following Too Closely",
+                         "Other Vehicular",
+                         "Passing Too Closely")
+                   GROUP BY YEAR, [CONTRIBUTING.FACTOR.VEHICLE.1]')
 
 # Create a color palette for the plot
 num_factors <- length(top_factors)
 colors <- colorRampPalette(brewer.pal(min(num_factors, 9), "Set1"))(num_factors)
 
-# Create the stacked area plot for the top 5 factors with the requested adjustments
+# Create the stacked area plot for the top 5 factors
 ggplot(agg_data, aes(x = YEAR, y = COUNT,
                              fill = CONTRIBUTING.FACTOR.VEHICLE.1)) +
   geom_area(position = 'stack') +
@@ -642,16 +645,19 @@ In this case, the decision tree model was trained to predict the number of peopl
 # Prepare the data for modeling
 
 # Select the relevant columns for the model from each dataset
-data_crash_cleaned <- data_crashes %>%
-  select(COLLISION_ID, CRASH.DATE, CRASH.TIME, BOROUGH, LATITUDE, LONGITUDE, 
-         NUMBER.OF.PERSONS.INJURED, NUMBER.OF.PERSONS.KILLED)
+data_crash_cleaned <- sqldf('SELECT COLLISION_ID, [CRASH.DATE], [CRASH.TIME], 
+                              BOROUGH, LATITUDE, LONGITUDE, 
+                              [NUMBER.OF.PERSONS.INJURED], 
+                              [NUMBER.OF.PERSONS.KILLED]
+                            FROM data_crashes')
 
-data_vehicle_cleaned <- data_vehicles %>%
-  select(COLLISION_ID, VEHICLE_TYPE, VEHICLE_YEAR, 
-         DRIVER_SEX, STATE_REGISTRATION)
+data_vehicle_cleaned <- sqldf('SELECT COLLISION_ID, VEHICLE_TYPE, VEHICLE_YEAR,
+                                DRIVER_SEX, STATE_REGISTRATION
+                              FROM data_vehicles')
 
-data_person_cleaned <- data_people %>%
-  select(COLLISION_ID, PERSON_TYPE, PERSON_AGE, PERSON_SEX, UNIQUE_ID)
+data_person_cleaned <- sqldf('SELECT COLLISION_ID, PERSON_TYPE, PERSON_AGE,
+                                PERSON_SEX, UNIQUE_ID
+                              FROM data_people')
 
 # Merge the three datasets on the common key COLLISION_ID
 crash_vehicle_merged <- merge(data_crash_cleaned, data_vehicle_cleaned, 
@@ -680,7 +686,6 @@ final_merged_dataset <- sqldf('SELECT * FROM final_merged_dataset fmd
                                  fmd.[DRIVER_SEX] IS NOT NULL AND
                                  fmd.[PERSON_AGE] IS NOT NULL AND
                                  fmd.[UNIQUE_ID] IS NOT NULL')
-
 
 ```
 
