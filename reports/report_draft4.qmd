@@ -621,6 +621,35 @@ The jitter plot shows the number of people injured or killed in crashes caused b
 
 \pagebreak
 
+### Bubble Plot Between Contributing Factor and Vehicle Type
+
+```{r echo=FALSE, fig.width=10, fig.height=6}
+bubble_data <- cleaned_crashes_data %>%
+  group_by(Contributing_Factor_Category, VEHICLE_CATEGORY) %>%
+  summarise(Count = n(), .groups = 'drop')
+
+# Create discrete size intervals from the Count variable
+bubble_data$Size <- cut(bubble_data$Count, breaks = pretty(bubble_data$Count, n = 10), include.lowest = TRUE, right = FALSE, labels = FALSE)
+
+# Create the bubble chart with discrete sizes
+ggplot(bubble_data, aes(x = Contributing_Factor_Category, y = VEHICLE_CATEGORY, size = factor(Size))) +
+  geom_point(alpha = 0.6, color = "blue") +
+  scale_size_manual(values = c(3, 6, 9, 12, 15, 18, 21, 24, 27, 30)) +
+  labs(title = "Crashes by Contributing Factor and Vehicle Category",
+       x = "Contributing Factor Category",
+       y = "Vehicle Category",
+       size = "Number of Crashes") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(size = 14),
+        legend.title = element_text(size = 10)) +
+  guides(size = guide_legend(override.aes = list(alpha = 1)))
+```
+
+The bubble plot shows the relationship between contributing factors and vehicle types in car crashes. The size of the bubble represents the number of crashes. The plot shows that the most common contributing factors are related to driver behavior. The most common vehicle types involved in crashes are passenger vehicles. This plot gives us a better understanding of how contributing factors and vehicle types are related in car crashes.
+
+\pagebreak
+
 ### Key Findings From the Exploratory Data Analysis
 
 **Borough-wise Crash Frequency:** We found that some boroughs experience more crashes than others, with Brooklyn leading the chart. This could relate to population density, traffic flow, or other urban factors.
