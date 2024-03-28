@@ -126,11 +126,51 @@ categorize_factors <- function(data_crashes) {
 }
 ```
 
+```{r echo=FALSE}
+# Function for categorizing vehicle types
+categorize_vehicle_types <- function(df) {
+  categorized_vehicles <- sqldf("
+    SELECT *, 
+    CASE
+      WHEN `VEHICLE.TYPE.CODE.1` LIKE '%Sedan%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Convertible%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Coupe%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Station Wagon%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%SUV%' THEN 'Passenger Vehicles'
+      
+      WHEN `VEHICLE.TYPE.CODE.1` LIKE '%Truck%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Van%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Bus%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Trailer%' THEN 'Commercial Vehicles'
+      
+      WHEN `VEHICLE.TYPE.CODE.1` LIKE '%Ambulance%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Fire%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Police%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE 'FDNY%' THEN 'Emergency Vehicles'
+      
+      WHEN `VEHICLE.TYPE.CODE.1` LIKE '%Motorcycle%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Scooter%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%E-Bike%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Moped%' THEN 'Motorcycles and Scooters'
+      
+      WHEN `VEHICLE.TYPE.CODE.1` LIKE '%Construction%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Forklift%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Tractor%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Excavator%' THEN 'Special Vehicles'
+      
+      ELSE 'Other'
+    END AS `VEHICLE_CATEGORY`
+    FROM df
+  ")
+  return(categorized_vehicles)
+}
+```
 
 ```{r echo=FALSE}
 
 # Perform data cleaning and pre-processing
 cleaned_crashes_data <- categorize_factors(data_crashes) %>%
+  categorize_vehicle_types() %>%
   # Convert CRASH.DATE to Date format and CRASH.TIME to a more standard format
   mutate(
     CRASH.DATE = mdy(CRASH.DATE),  # Using lubridate for flexible date parsing
