@@ -97,11 +97,40 @@ In this project, we will examine data on motor vehicle crashes in New York City 
 The NYC OpenData dataset contains details of motor vehicle collision occurrences reported by the NYPD since 2012 (the dataset is updated with new data frequently). Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage. The data set of crash incidents contains over 2 million records alone, each detailing a motor vehicle collision. The data includes the date, time, location (latitude, longitude, borough), and the number of individuals affected (injured or killed) among drivers, pedestrians, and cyclists. In addition to the crash dataset, NYC OpenData maintains two other datasets related to the vehicle(s) and people involved in each crash, respectively. When combined, these datasets provide a comprehensive view of each collision incident and the individuals involved. Our analysis will focus on understanding patterns and trends within these incidents, and identifying the most important factors that contribute to potentially fatal accidents.
 
 ## Data Cleaning and Pre-Processing
+```{r echo=FALSE}
+# Function to help with text mining for mapping contributing factors.
+categorize_factors <- function(data_crashes) {
+  categorized_data <- sqldf("
+    SELECT *, 
+    CASE 
+      WHEN [CONTRIBUTING.FACTOR.VEHICLE.1] IN ('Driver Inattention/Distraction',
+      'Alcohol Involvement', 'Aggressive Driving/Road Rage', 'Unsafe Speed',
+      'Fell Asleep', 'Cell Phone (hand-held)', 'Texting', 'Driver Inexperience',
+      'Lost Consciousness', 'Illnes', 'Fatigued/Drowsy',
+      'Prescription Medication', 'Drugs (Illegal)', 'Illness') THEN
+      'Driver Behavior'
+      WHEN [CONTRIBUTING.FACTOR.VEHICLE.1] IN ('Brakes Defective',
+      'Tire Failure/Inadequate', 'Headlights Defective', 'Tow Hitch Defective',
+      'Vehicle Vandalism') THEN 'Vehicle Condition'
+      WHEN [CONTRIBUTING.FACTOR.VEHICLE.1] IN ('Pavement Slippery',
+      'View Obstructed/Limited', 'Obstruction/Debris', 'Glare',
+      'Pavement Defective') THEN 'Road and Environmental Conditions'
+      WHEN [CONTRIBUTING.FACTOR.VEHICLE.1] IN ('Traffic Control Disregarded',
+      'Failure to Yield Right-of-Way', 'Passing or Lane Usage Improper',
+      'Traffic Control Device Improper/Non-Working') THEN 'Traffic Control'
+      ELSE 'Other'
+    END AS Contributing_Factor_Category
+    FROM data_crashes
+  ")
+  return (categorized_data)
+}
+```
+
 
 ```{r echo=FALSE}
 
 # Perform data cleaning and pre-processing
-cleaned_crashes_data <- data_crashes %>%
+cleaned_crashes_data <- categorize_factors(data_crashes) %>%
   # Convert CRASH.DATE to Date format and CRASH.TIME to a more standard format
   mutate(
     CRASH.DATE = mdy(CRASH.DATE),  # Using lubridate for flexible date parsing
@@ -763,7 +792,6 @@ As it stands, some key findings from our analysis can be summarized as follows i
 The next steps in this project could involve more advanced predictive modeling, such as neural networks, to improve the accuracy of our predictions. A good possible type of neural network to use would be a recurrent neural network (RNN) which is good for time series data. Additionally, ShapeFiles, which are a type of geographic information systems (GIS) file, could be used to map out the locations of car crashes and identify hotspots with a high degree of accuracy.
 
 So far, this project has revealed much but also shown us how much more there is to learn.
-
 
 ```{r, include=FALSE, echo=FALSE}
 
