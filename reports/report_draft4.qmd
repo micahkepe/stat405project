@@ -646,7 +646,8 @@ ggplot(bubble_data, aes(x = Contributing_Factor_Category, y = VEHICLE_CATEGORY, 
   guides(size = guide_legend(override.aes = list(alpha = 1)))
 ```
 
-The bubble plot shows the relationship between contributing factors and vehicle types in car crashes. The size of the bubble represents the number of crashes. The plot shows that the most common contributing factors are related to driver behavior. The most common vehicle types involved in crashes are passenger vehicles. This plot gives us a better understanding of how contributing factors and vehicle types are related in car crashes.
+The bubble plot shows the relationship between contributing factors and vehicle types in car crashes. The relative sizing of the bubbles are indicative of which contributing factors, in combination with the type of vehicle involved, result in the most crashes. The plot shows that the most common contributing factors are related broadly to driver behavior, and the most common vehicle types involved in crashes are passenger vehicles. A working hypothesis for why this is the case is that passenger vehicles are the most common type of vehicle on the road and previous analysis has shown that driver inattention/distraction is the most common contributing factor to crashes. Additionally, the insights gained from the time analysis showed clusters of crashes during rush hours. Holistically, it is not hard to envision the scenario in which commuters are in a rush to get to work or home, and are not paying attention to the road, resulting in crashes. 
+
 
 \pagebreak
 
@@ -845,6 +846,7 @@ The generalized linear model was trained to predict the number of people injured
 It is important to note, however, that while GLM provides valuable insights, it is based on associations and does not imply causation. The model's assumptions, including the independence of events and the suitability of the Poisson distribution for this data, should be carefully considered when interpreting the results and planning interventions.
 
 \pagebreak
+
 ## Conclusion
 
 Through our exploration, we've unearthed patterns and insights that shed light on the complex nature of car crashes in New York City. Our findings point toward actionable insights, such as the need for targeted interventions during high-risk times of the day, the importance of considering geographical differences in traffic safety, and the potential for tailored interventions for different age groups. While our study offers detailed analysis, it is only the beginning of a broader effort to understand and address the multifaceted issue of car crashes. Future work could involve more advanced predictive modeling, such as ensemble methods or neural networks, to improve the accuracy of our predictions. Additionally, further research could explore the impact of external factors, such as weather conditions, road infrastructure, and vehicle safety features, on the likelihood of car crashes. By continuing to investigate and address the complex issue of car crashes, we can work toward a safer and more sustainable future for all road users.
@@ -859,7 +861,7 @@ As it stands, some key findings from our analysis can be summarized as follows i
 
 \- Fatal crashes are prominent during the evening and the night, when darkness causes reduced visibility.
 
-The next steps in this project could involve more advanced predictive modeling, such as neural networks, to improve the accuracy of our predictions. A good possible type of neural network to use would be a recurrent neural network (RNN) which is good for time series data. Additionally, ShapeFiles, which are a type of geographic information systems (GIS) file, could be used to map out the locations of car crashes and identify hotspots with a high degree of accuracy.
+\- The top 5 contributing factors to car crashes have been decreasing since 2020, which could be due to the COVID-19 pandemic and stay-at-home orders. The lasting impact of the pandemic on traffic safety remains to be seen.
 
 
 ```{r, include=FALSE, echo=FALSE}
