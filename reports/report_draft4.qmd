@@ -730,7 +730,9 @@ rpart.plot(tree_model,
 
 ```
 
-Before interpretting the decision tree, it is important to understand the theoretical underpinnings of the model. Decision trees are a type of supervised learning algorithm that is mostly used in classification problems. It works for both categorical and continuous input and output variables. The goal of using a decision tree is to create a model that predicts the value of a target variable by learning simple decision rules inferred from the data features. The decision tree model is a flowchart-like structure in which each internal node represents a test on an attribute, each branch represents the outcome of the test, and each leaf node represents a class label. The paths from the root to the leaf represent classification rules. Each branch represents a choice or condition leading to different outcomes.
+Before interpreting the decision tree, it is important to understand the theoretical underpinnings of the model. Decision trees are a type of supervised learning algorithm that is mostly used in classification problems. It works for both categorical and continuous input and output variables. The goal of using a decision tree is to create a model that predicts the value of a target variable by learning simple decision rules inferred from the data features. The decision tree model is a flowchart-like structure in which each internal node represents a test on an attribute, each branch represents the outcome of the test, and each leaf node represents a class label. The paths from the root to the leaf represent classification rules. Each branch represents a choice or condition leading to different outcomes.
+
+Understanding the hyper parameters of the decision tree and the rationale behind is also important. The minimum number of observations that must exist in a node in order for a split to be attempted is 10. The complexity parameter (cp) is set to 0.001, which is the cost complexity parameter used for pruning the tree. The model is trained on 70% of the data and tested on the remaining 30%. The model uses ANOVA (Analysis of Variance) as the method for splitting the data. 
 
 In this case, the decision tree model was trained to predict the number of people killed in car crashes based on the following features: BOROUGH, PERSON_TYPE, CRASH.TIME, and PERSON_AGE. The model was trained on 70% of the data and tested on the remaining 30%. The model achieved a Mean Absolute Error (MAE) of 0.003833112 and a Root Mean Squared Error (RMSE) of 0.05435656. The decision tree model is visualized above. The model is quite complex and difficult to interpret, but it is able to predict the number of people killed in car crashes with a high degree of accuracy. Most likely the model is overfitting, and the complexity of the model is not necessary for the task at hand. However, the model is a good starting point for predicting the number of people killed in car crashes.
 
@@ -843,7 +845,6 @@ The generalized linear model was trained to predict the number of people injured
 It is important to note, however, that while GLM provides valuable insights, it is based on associations and does not imply causation. The model's assumptions, including the independence of events and the suitability of the Poisson distribution for this data, should be carefully considered when interpreting the results and planning interventions.
 
 \pagebreak
-
 ## Conclusion
 
 Through our exploration, we've unearthed patterns and insights that shed light on the complex nature of car crashes in New York City. Our findings point toward actionable insights, such as the need for targeted interventions during high-risk times of the day, the importance of considering geographical differences in traffic safety, and the potential for tailored interventions for different age groups. While our study offers detailed analysis, it is only the beginning of a broader effort to understand and address the multifaceted issue of car crashes. Future work could involve more advanced predictive modeling, such as ensemble methods or neural networks, to improve the accuracy of our predictions. Additionally, further research could explore the impact of external factors, such as weather conditions, road infrastructure, and vehicle safety features, on the likelihood of car crashes. By continuing to investigate and address the complex issue of car crashes, we can work toward a safer and more sustainable future for all road users.
@@ -860,7 +861,6 @@ As it stands, some key findings from our analysis can be summarized as follows i
 
 The next steps in this project could involve more advanced predictive modeling, such as neural networks, to improve the accuracy of our predictions. A good possible type of neural network to use would be a recurrent neural network (RNN) which is good for time series data. Additionally, ShapeFiles, which are a type of geographic information systems (GIS) file, could be used to map out the locations of car crashes and identify hotspots with a high degree of accuracy.
 
-So far, this project has revealed much but also shown us how much more there is to learn.
 
 ```{r, include=FALSE, echo=FALSE}
 
