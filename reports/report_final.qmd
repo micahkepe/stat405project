@@ -1,5 +1,5 @@
 ---
-title: "Group 3: Crash Analysis NYC- Draft 5"
+title: "Group 3: Crash Analysis NYC"
 author: "Kevin Lei, Micah Kepe, Zachary Kepe, Giulia Costantini"
 date: "2024-02-27"
 format:
@@ -15,7 +15,7 @@ toc-title: "Table of Contents"
 header-includes:
   - \usepackage{fancyhdr}
   - \pagestyle{fancy}
-  - \fancyhead[CO,CE]{Crash Analysis NYC (Draft 5)}
+  - \fancyhead[CO,CE]{Crash Analysis NYC}
   - \fancyhead[LE,RO]{\thepage}
   - \fancyfoot{}
   - \fancyfoot[LE,RO]{\thepage}
@@ -153,7 +153,7 @@ categorize_vehicle_types <- function(df) {
            `VEHICLE.TYPE.CODE.1` LIKE '%Fire%' OR 
            `VEHICLE.TYPE.CODE.1` LIKE '%Police%' OR 
            `VEHICLE.TYPE.CODE.1` LIKE 'FDNY%' THEN 'Emergency Vehicles'
-      
+    
       WHEN `VEHICLE.TYPE.CODE.1` LIKE '%Motorcycle%' OR 
            `VEHICLE.TYPE.CODE.1` LIKE '%Scooter%' OR 
            `VEHICLE.TYPE.CODE.1` LIKE '%E-Bike%' OR 
@@ -889,3 +889,4 @@ As it stands, some key findings from our analysis can be summarized as follows i
 dbDisconnect(con)
 
 ```
+
