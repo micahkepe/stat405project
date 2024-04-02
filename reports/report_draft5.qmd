@@ -1,0 +1,891 @@
+---
+title: "Group 3: Crash Analysis NYC- Draft 5"
+author: "Kevin Lei, Micah Kepe, Zachary Kepe, Giulia Costantini"
+date: "2024-02-27"
+format:
+  pdf: default
+  html: default
+pdf-engine: pdflatex
+editor: visual
+fontsize: 10pt
+geometry: margin=1in
+toc: true                   
+toc-depth: 3
+toc-title: "Table of Contents"
+header-includes:
+  - \usepackage{fancyhdr}
+  - \pagestyle{fancy}
+  - \fancyhead[CO,CE]{Crash Analysis NYC (Draft 5)}
+  - \fancyhead[LE,RO]{\thepage}
+  - \fancyfoot{}
+  - \fancyfoot[LE,RO]{\thepage}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# # Install packages if not already installed
+if (!require("tidyverse")) install.packages("tidyverse")
+if (!require("plotly")) install.packages("plotly")
+if (!require("chron")) install.packages("chron")
+if (!require("reshape2")) install.packages("reshape2")
+if (!require("rpart")) install.packages("rpart")
+if (!require("rpart.plot")) install.packages("rpart.plot")
+if (!require("sjPlot")) install.packages("sjPlot")
+if (!require("DBI")) install.packages("DBI")
+if (!require("RSQLite")) install.packages("RSQLite")
+if (!require("sqldf")) install.packages("sqldf")
+if (!require("kableExtra")) install.packages("kableExtra")
+
+# Load the required packages
+library(reshape2)
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(plotly)
+library(chron)
+library(reshape2)
+library(RColorBrewer)
+library(scales)
+library(rpart)
+library(rpart.plot)
+library(sjPlot)
+library(DBI)
+library(RSQLite)
+library(sqldf)
+library(kableExtra)
+
+```
+
+```{r, echo=FALSE}
+
+# Load the data sets
+# Load the SQLite database
+con <- dbConnect(RSQLite::SQLite(), "../data/nyc_crashes.db")
+
+# Load the primary data set of car crashes
+crash_query <- "SELECT * 
+                FROM crashes 
+                WHERE BOROUGH IS NOT NULL AND BOROUGH != ''
+                  AND LATITUDE IS NOT NULL AND LATITUDE > 40 AND LATITUDE < 41
+                  AND LONGITUDE IS NOT NULL AND LONGITUDE < -73 AND LONGITUDE > -75
+                  AND 'CRASH.DATE' IS NOT NULL
+                  AND 'CRASH.TIME' IS NOT NULL"
+
+data_crashes <- dbGetQuery(con, crash_query)
+
+# Load the secondary data set of people involved in car crashes
+data_people <- dbGetQuery(con, "SELECT * FROM people
+                                WHERE COLLISION_ID IN (SELECT COLLISION_ID FROM crashes)")
+
+# Load the secondary data set of vehicles involved in car crashes
+data_vehicles <- dbGetQuery(con, "SELECT * FROM vehicles
+                                  WHERE COLLISION_ID IN (SELECT COLLISION_ID FROM crashes)")
+
+```
+
+\pagebreak
+
+## Introduction
+
+Car crashes in the United States represent a significant public health concern, with over 42,900 deaths involving over 61,000 vehicles in 2020 according to the Insurance Institute for Highway Safety. The economic impact of car crashes is also substantial, with an estimated cost of \$340 billion in 2019 via the National Highway Traffic Safety Administration. Not only does preventing car crashes save lives, but it also saves money and resources.
+
+In the bustling metropolis of New York City, the largest city in the United States, motor vehicle crashes occur frequently and result in substantial economic costs. They cause injuries, deaths, financial damages, and create an contribute to an atmosphere of uncertainty and fear. Reducing the number of crashes, especially those that are fatal, is key to improving the safety of the city.
+
+In this project, we will examine data on motor vehicle crashes in New York City to uncover underlying trends and discern the most important factors that contribute to potentially fatal accidents. By analyzing the data, we seek to provide stakeholders with actionable insights and recommendations to reduce the number of collisions and deaths.
+
+## Data Description
+
+The NYC OpenData dataset contains details of motor vehicle collision occurrences reported by the NYPD since 2012 (the dataset is updated with new data frequently). Collisions are only reported if a person was injured or killed, or if there was more than \$1000 in damage. The data set of crash incidents contains over 2 million records alone, each detailing a motor vehicle collision. The data includes the date, time, location (latitude, longitude, borough), and the number of individuals affected (injured or killed) among drivers, pedestrians, and cyclists. In addition to the crash dataset, NYC OpenData maintains two other datasets related to the vehicle(s) and people involved in each crash, respectively. When combined, these datasets provide a comprehensive view of each collision incident and the individuals involved. Our analysis will focus on understanding patterns and trends within these incidents, and identifying the most important factors that contribute to potentially fatal accidents.
+
+## Data Cleaning and Pre-Processing
+
+```{r echo=FALSE}
+
+# Function to help with text mining for mapping contributing factors.
+categorize_factors <- function(data_crashes) {
+  categorized_data <- sqldf("
+    SELECT *, 
+    CASE 
+      WHEN [CONTRIBUTING.FACTOR.VEHICLE.1] IN ('Driver Inattention/Distraction',
+      'Alcohol Involvement', 'Aggressive Driving/Road Rage', 'Unsafe Speed',
+      'Fell Asleep', 'Cell Phone (hand-held)', 'Texting', 'Driver Inexperience',
+      'Lost Consciousness', 'Illnes', 'Fatigued/Drowsy',
+      'Prescription Medication', 'Drugs (Illegal)', 'Illness') THEN
+      'Driver Behavior'
+      WHEN [CONTRIBUTING.FACTOR.VEHICLE.1] IN ('Brakes Defective',
+      'Tire Failure/Inadequate', 'Headlights Defective', 'Tow Hitch Defective',
+      'Vehicle Vandalism') THEN 'Vehicle Condition'
+      WHEN [CONTRIBUTING.FACTOR.VEHICLE.1] IN ('Pavement Slippery',
+      'View Obstructed/Limited', 'Obstruction/Debris', 'Glare',
+      'Pavement Defective') THEN 'Road and Environmental Conditions'
+      WHEN [CONTRIBUTING.FACTOR.VEHICLE.1] IN ('Traffic Control Disregarded',
+      'Failure to Yield Right-of-Way', 'Passing or Lane Usage Improper',
+      'Traffic Control Device Improper/Non-Working') THEN 'Traffic Control'
+      ELSE 'Other'
+    END AS Contributing_Factor_Category
+    FROM data_crashes
+  ")
+  return (categorized_data)
+}
+
+```
+
+```{r echo=FALSE}
+
+# Function for categorizing vehicle types
+categorize_vehicle_types <- function(df) {
+  categorized_vehicles <- sqldf("
+    SELECT *, 
+    CASE
+      WHEN `VEHICLE.TYPE.CODE.1` LIKE '%Sedan%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Convertible%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Coupe%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Station Wagon%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%SUV%' THEN 'Passenger Vehicles'
+      
+      WHEN `VEHICLE.TYPE.CODE.1` LIKE '%Truck%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Van%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Bus%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Trailer%' THEN 'Commercial Vehicles'
+      
+      WHEN `VEHICLE.TYPE.CODE.1` LIKE '%Ambulance%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Fire%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Police%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE 'FDNY%' THEN 'Emergency Vehicles'
+      
+      WHEN `VEHICLE.TYPE.CODE.1` LIKE '%Motorcycle%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Scooter%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%E-Bike%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Moped%' THEN 'Motorcycles and Scooters'
+      
+      WHEN `VEHICLE.TYPE.CODE.1` LIKE '%Construction%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Forklift%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Tractor%' OR 
+           `VEHICLE.TYPE.CODE.1` LIKE '%Excavator%' THEN 'Special Vehicles'
+      
+      ELSE 'Other'
+    END AS `VEHICLE_CATEGORY`
+    FROM df
+  ")
+  return(categorized_vehicles)
+}
+
+```
+
+```{r echo=FALSE}
+
+# Perform data cleaning and pre-processing
+cleaned_crashes_data <- categorize_factors(data_crashes) %>%
+  categorize_vehicle_types() %>%
+  # Convert CRASH.DATE to Date format and CRASH.TIME to a more standard format
+  mutate(
+    CRASH.DATE = mdy(CRASH.DATE),  # Using lubridate for flexible date parsing
+    CRASH.TIME = format(strptime(CRASH.TIME, format = "%H:%M"), "%H:%M:%S")
+  ) %>%
+  # Replace empty strings with "UNKNOWN" for street names
+  mutate_at(vars(ON.STREET.NAME, CROSS.STREET.NAME, OFF.STREET.NAME),
+            ~ifelse(. == "", "UNKNOWN", .)) %>%
+  # Drop the LOCATION column as it's redundant
+  select(-LOCATION) %>%
+  # Finally, remove any remaining rows with NA values in any column
+  na.omit()
+
+```
+
+For the data cleaning process, we removed rows with missing or invalid values in crucial columns, such as BOROUGH, LATITUDE, LONGITUDE, CRASH.DATE, and CRASH.TIME. We also converted the CRASH.DATE column to a Date format and the CRASH.TIME column to a more standard format. We replaced empty strings with "UNKNOWN" for street names and dropped the LOCATION column as it was redundant. Finally, we removed any remaining rows with NA values in any column.
+
+As a result of the data cleaning process, the primary data set went from having 2,065,192 rows and 29 columns to having 1,382,320 rows and 28 columns. While this is a significant reduction in the number of rows, the data set is still large enough to perform meaningful analysis.
+
+
+## Text Mining and Categorization
+In addition to the above data preprocessing and cleaning, we also performed text mining to aid in the categorization of contributing factors and vehicle types. The original contributing factors and vehicle types were quite granular and numerous, making it challenging to analyze the data effectively. By categorizing these factors and types, we can better understand the underlying trends and patterns in the data. For contributing factors, we categorized them into broader categories such as "Driver Behavior," "Vehicle Condition," "Road and Environmental Conditions," "Traffic Control," and "Other." For vehicle types, we categorized them into broader categories such as "Passenger Vehicles," "Commercial Vehicles," "Emergency Vehicles," "Motorcycles and Scooters," "Special Vehicles," and "Other." Doing so allows us to analyze the data more effectively and draw meaningful insights from it without getting lost in the details.
+
+\pagebreak
+
+## Past Trends and Insights
+
+After cleaning the data, we performed an exploratory data analysis to identify trends and insights in the data and glean a better understanding of the factors that contribute to car crashes. Understanding the past trends of the data allows us to gain intuition before we do predictive modeling and make recommendations. The graphs and charts below tell a story of the historic trends in NYC car crashes.
+
+### Frequency of Car Crashes by NYC Borough (2012-2024)
+
+```{r echo=FALSE, fig.width=10, fig.height=6}
+
+# use population data from most recent census
+populations <- c(BRONX = 1.427e6, QUEENS = 2.271e6, BROOKLYN = 2.577e6, MANHATTAN = 1.629e6, STATEN_ISLAND = 475596)
+
+# Create a table of the frequency of car crashes by borough
+borough_cleaned <- table(cleaned_crashes_data$BOROUGH)
+
+# Calculate crashes per capita for each borough
+crashes_per_capita <- borough_cleaned / populations
+
+# Calculate the percentage of crashes per capita
+crash_percentage <- crashes_per_capita * 100
+
+# Order crash_percentage to match the order in the plot
+ordered_crash_percentage <- crash_percentage[match(names(borough_cleaned), names(crash_percentage))]
+
+# Set margins (bottom, left, top, right)
+par(mar=c(7, 5, 4, 2) + 0.1, mgp=c(4, 1, 0))
+
+colors <- c("#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD")
+
+# Calculate the bar midpoints to place x-axis labels correctly
+bar_midpoints <- barplot(ordered_crash_percentage,
+                         main = "Car Crash Percentage by NYC Borough (2012-2024)",
+                         xlab = "Borough",
+                         ylab = "Percentage of Crashes per Capita",
+                         yaxt = "n",
+                         xaxt = "n",
+                         ylim = c(0, 25),
+                         col = colors)
+
+abline(h = axTicks(2), col = "gray", lty = "dotted")
+
+# Add the y-axis labels
+axis(2, at=axTicks(2),
+     labels=sprintf("%.2f%%", axTicks(2)),
+     las=1)
+
+# Add the x-axis labels
+text(x = bar_midpoints, y = -max(ordered_crash_percentage)/50, 
+     labels = names(ordered_crash_percentage), 
+     xpd = TRUE, srt = 65, adj = c(1,1), cex = 0.7)
+
+# Add a label on top of each bar with the percentage rounded to the nearest tenth
+text(x = bar_midpoints, y = ordered_crash_percentage + 0.5,
+     labels = sprintf("%.1f%%", ordered_crash_percentage), 
+     cex = 0.7, pos = 3)
+```
+
+We plotted the frequency of car crashes per borough in NYC. The goal of this graph was to gain a better understanding of which boroughs were more likely to result in car crashes.
+
+The borough with the least car crashes is Staten Island at around 75,000 car crashes, while the borough with the most car crashes is Brooklyn with around 450,000 car crashes. This graph gives us a better understanding of the likelihood that a car crash will occur in a certain borough. However, a consideration that is not specified is the amount of traffic through the boroughs.
+
+An important caveat for this graphic is that the population counts used to determine the percentages are from the most recent census, and we did not factor in population change across borough from 2012-2024. This affects the accuracy of the derived percentages, but the general trends are still useful for understanding the likelihood of car crashes in each borough.
+
+\pagebreak
+
+### Density of Car Crashes in NYC
+
+```{r echo=FALSE}
+
+# Define famous landmarks in NYC
+landmarks <- data.frame(
+  name = c("Statue of Liberty", "Empire State Building", "Central Park", 
+           "Times Square", "Brooklyn Bridge"),
+  latitude = c(40.6892, 40.748817, 40.785091, 40.7580, 40.7061),
+  longitude = c(-74.0445, -73.985428, -73.968285, -73.9855, -73.9969)
+)
+
+# Create a heat mapping using ggplot
+ggplot(cleaned_crashes_data, aes(x = LONGITUDE, y = LATITUDE)) +
+  geom_bin2d(bins = 100, alpha = 0.6) +
+  scale_fill_gradient(low = "blue", high = "red") +
+  labs(title = "Density of Car Crashes in NYC",
+       x = "Longitude",
+       y = "Latitude") +
+  geom_point(data = landmarks, aes(x = longitude, y = latitude), 
+             color = "red", size = 3, shape = 3) +
+  theme_minimal() +
+  geom_text(data = landmarks, aes(x = longitude, y = latitude, label = name), 
+            vjust = -1, check_overlap = TRUE, color = "darkblue", size = 3)
+
+```
+
+The heat map of car crashes in NYC shows that the highest density of car crashes occurs in the center of NYC. This is likely due to the fact that the center of NYC has the most traffic and the most people. The lowest density of car crashes occurs in the outskirts of NYC. This aligns with our intuition, as the centers of cities are typically more crowded and have more traffic. This graph gives us a better understanding of where car crashes are most likely to occur in NYC.
+
+### Pie Chart of Contributing Factors to Car Crashes
+
+```{r echo=FALSE, fig.width=10, fig.height=6}
+
+# Adjust global graphics parameters to reduce text size
+old_par <- par(cex=0.8)
+
+num_unspecified <- sqldf("SELECT COUNT(*) FROM cleaned_crashes_data 
+                         WHERE [CONTRIBUTING.FACTOR.VEHICLE.1] = 'Unspecified' 
+                            OR [CONTRIBUTING.FACTOR.VEHICLE.1] = ''")
+
+percent_unspecified <- num_unspecified / nrow(cleaned_crashes_data)
+
+top_fators_w_unspecified <- cleaned_crashes_data %>%
+  count(CONTRIBUTING.FACTOR.VEHICLE.1, sort = TRUE) %>%
+  slice_max(n = 5, order_by = n)
+
+# Create a pie chart for the top 5 specified contributing factors to car crashes
+top_factors_df <- cleaned_crashes_data %>%
+  filter(CONTRIBUTING.FACTOR.VEHICLE.1 != "Unspecified", CONTRIBUTING.FACTOR.VEHICLE.1 != "") %>%
+  count(CONTRIBUTING.FACTOR.VEHICLE.1, sort = TRUE) %>%
+  slice_max(n = 5, order_by = n)
+
+top_factors <- top_factors_df$n
+
+labels_with_percents <- top_factors_df %>%
+  mutate(percentage = n / sum(n) * 100) %>%
+  reframe(label = paste(CONTRIBUTING.FACTOR.VEHICLE.1, ":", round(percentage, 1), "%")) %>%
+  pull(label)
+
+pie(top_factors,
+    labels = labels_with_percents,
+    main = "Top 5 Specified Contributing Factors to Car Crashes",
+    col = rainbow(length(top_factors)))
+
+# Reset to original par values after plotting
+par(old_par)
+
+```
+
+Disregarding the unspecified contributing factors, the top 5 contributing factors to car crashes are: Driver Inattention/Distraction, Failure to Yield Right-of-Way, Backing Unsafely, Following Too Closely, and Other Vehicular. The pie chart shows that the top specified contributing factor to car crashes is Driver Inattention/Distraction, which accounts for 52.9% of the observed car crashes. However, an important consideration is that a large amount of the contributing factors are unspecified, which could affect the accuracy of the data. 531,539 crashes in the cleaned data set have unspecified contributing factors, which is 38% of the all crashes in the data. There was around twice as many crashes with unspecified contributing factors than the number of crashes with driver inattention as a contributing factor.
+
+\pagebreak
+
+### Histogram of Car Crashes by Time of Day
+
+```{r echo=FALSE, fig.width=10, fig.height=6}
+
+# Extract the hour from the CRASH.TIME column and convert it to a numeric value
+ggplot(cleaned_crashes_data, aes(x = as.numeric(substr(CRASH.TIME, 1, 2)))) +
+  geom_histogram(bins = 24, fill = "dodgerblue", color = "white") +
+  labs(title = "Car Crashes Frequency by Time of Day",
+       x = "Hour of the Day",
+       y = "Number of Crashes") +
+  scale_x_continuous(breaks = 0:23) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        axis.text.x = element_text(margin = margin(t = -10, b = 10)),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+
+```
+
+The histogram of car crashes by time of day shows that the most car crashes occur around the hours of 3:00PM and 6:00PM. This is likely due to the fact that these are the hours when people are getting off work and are driving home. The least amount of car crashes occur around the hours of 3:00AM and 4:00AM, which is likely due to the fact that these are the hours when people are sleeping and there is less traffic on the road. This graph gives us a better understanding of when car crashes are most likely to occur. An important consideration that is that traffic patterns may vary seasonally and by day of the week, which could affect the number of car crashes.
+
+\pagebreak
+
+### Line Plot of Top 3 Contributing Factors by Time of Day
+
+From the previous histogram of car crashes by time of day, we observe that hour of the day does seem to influence the risk of car crashes. We now pose the question: Throughout the day, what factors contribute the most to car crashes?
+
+```{r echo=FALSE, fig.width=10, fig.height=6, warning=FALSE}
+
+# Create a subset of data with only the top contributing factors
+factor_by_hour <- cleaned_crashes_data %>%
+  filter(CONTRIBUTING.FACTOR.VEHICLE.1 %in% c("Driver Inattention/Distraction",
+                                              "Failure to Yield Right-of-Way",
+                                              "Backing Unsafely")) %>%
+  mutate(HOUR = as.numeric(format(strptime(CRASH.TIME, format = "%H:%M:%S"), "%H"))) %>%
+  group_by(HOUR, CONTRIBUTING.FACTOR.VEHICLE.1) %>%
+  summarise(Count = n(), .groups = "drop" ) %>%
+  ungroup()
+
+# Use ggplot2 for plotting
+ggplot(factor_by_hour, aes(x = HOUR, y = Count, color = CONTRIBUTING.FACTOR.VEHICLE.1, group = CONTRIBUTING.FACTOR.VEHICLE.1)) +
+  geom_line(linewidth = 1.2, alpha = 0.9) +
+  geom_point(size = 3, alpha = 0.8) +
+  scale_color_manual(values = c("Driver Inattention/Distraction" = "#E69F00",
+                                "Failure to Yield Right-of-Way" = "#56B4E9",
+                                "Backing Unsafely" = "#009E73")) +
+  labs(title = "Contributing Factors to Crashes by Hour of Day",
+       subtitle = "Top 3 Specified Contributing Factors",
+       x = "Hour of the Day (24-hour format)",
+       y = "Number of Crashes",
+       color = "Contributing Factor") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5, size = 20),
+        plot.subtitle = element_text(hjust = 0.5, size = 16),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        panel.grid.major = element_line(color = "gray80"),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill = "white", color = NA),
+        panel.border = element_rect(color = "gray80", fill = NA, linewidth = 0.5)) +
+  scale_x_continuous(breaks = 0:23) +
+  scale_y_continuous(labels = scales::comma)
+
+```
+
+The scatter plot of the top 3 contributing factors by time of day show how the top factors contribute to the number of car crashes throughout the day. What can be seen is that distracted driving is consistently the biggest factor contributing to car crashes. During hours with the most crashes, such as 8:00AM and 5:00PM, all 3 factors reach peaks. All contributing factors show that the crash amount increases between the hours of 8:00AM and 5:00PM and decreases outside of those hours. This graph gives us a better understanding of the relationship between time of day, number of crashes, and contributing factors.
+
+\pagebreak
+
+### Temporal Density Maps
+
+```{r echo=FALSE, fig.width=10, fig.height=8}
+
+# Start with the cleaned data
+analysis_data <- cleaned_crashes_data
+
+# Directly extract day of the week from CRASH.DATE
+analysis_data$DayOfWeek <- weekdays(analysis_data$CRASH.DATE, abbreviate = FALSE)
+
+# Extract the hour of the day from CRASH.TIME
+analysis_data$HourOfDay <- substr(analysis_data$CRASH.TIME, 1, 2)
+
+# Create a table for the plot
+heatmap_data <- table(analysis_data$DayOfWeek, analysis_data$HourOfDay)
+
+# Transform the table into a data frame for ggplot
+heatmap_df <- as.data.frame(heatmap_data)
+names(heatmap_df) <- c("DayOfWeek", "HourOfDay", "Frequency")
+
+# Ensure DayOfWeek is an ordered factor to maintain the day order
+heatmap_df$DayOfWeek <- factor(heatmap_df$DayOfWeek,
+                               levels = c("Sunday",
+                                          "Monday",
+                                          "Tuesday",
+                                          "Wednesday",
+                                          "Thursday",
+                                          "Friday",
+                                          "Saturday"))
+
+# Plotting the map
+ggplot(heatmap_df, aes(x = HourOfDay, y = DayOfWeek, fill = Frequency)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(title = "Heatmap of Crashes by Day of Week and Hour of Day",
+       x = "Hour of Day",
+       y = NULL,
+       fill = "Crash Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+The temporal density map shows the frequency of car crashes by day of the week and hour of the day. There is an evident "safe zone" on weekdays between the hours of 1:00AM and 5:00AM. This is expected as these are not usually times where there are lots of people active. Interesting, "danger zones" are evident on weekdays between the hours of 8:00AM and 10:00AM and 4:00PM and 6:00PM. One possible explanation for this is that these are the hours when people are driving to and from work. This graph dispels the myth that most car crashes occur at night and shows that most car crashes actually occur during the day.
+
+The most damaging car crashes are of course those that result in loss of life. Since one of the primary goals of our analysis is to examine potential trends that result in fatal car crashes, we pose the following question: When are fatal car crashes more likely to occur?
+
+```{r echo=FALSE, fig.width=10, fig.height=8}
+
+# Start with the cleaned data
+analysis_data <- sqldf('SELECT * FROM cleaned_crashes_data 
+                        WHERE [NUMBER.OF.PERSONS.KILLED] > 0')
+
+# Directly extract day of the week from CRASH.DATE
+analysis_data$DayOfWeek <- weekdays(analysis_data$CRASH.DATE, abbreviate = FALSE)
+
+# Extract the hour of the day from CRASH.TIME
+analysis_data$HourOfDay <- substr(analysis_data$CRASH.TIME, 1, 2)
+
+# Create a table for the plot
+heatmap_data <- table(analysis_data$DayOfWeek, analysis_data$HourOfDay)
+
+# Transform the table into a data frame for ggplot
+heatmap_df <- as.data.frame(heatmap_data)
+names(heatmap_df) <- c("DayOfWeek", "HourOfDay", "Frequency")
+
+# Ensure DayOfWeek is an ordered factor to maintain the day order
+heatmap_df$DayOfWeek <- factor(heatmap_df$DayOfWeek,
+                               levels = c("Sunday",
+                                          "Monday",
+                                          "Tuesday",
+                                          "Wednesday",
+                                          "Thursday",
+                                          "Friday",
+                                          "Saturday"))
+
+# Plotting the map
+ggplot(heatmap_df, aes(x = HourOfDay, y = DayOfWeek, fill = Frequency)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(title = "Heatmap of Fatal Crashes by Day of Week and Hour of Day",
+       x = "Hour of Day",
+       y = NULL,
+       fill = "Crash Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+This temporal density map shows the frequency of fatal car crashes by day of the week and hour of the day. Unlike the previous heat map, there is no noticeable trend. This heat map suggests that time during the week has no impact on instances of fatal car crashes. However, we can narrow the scope further to examine if time of day in general influences the frequency of fatal car crashes. The following plot does just that.
+
+```{r echo=FALSE, fig.width=10, fig.height=3}
+
+# Extract the hour of the day from CRASH.TIME
+analysis_data$HourOfDay <- substr(analysis_data$CRASH.TIME, 1, 2)
+
+# Create a table for the plot
+heatmap_data <- table(analysis_data$HourOfDay)
+
+# Transform the table into a data frame for ggplot
+heatmap_df <- as.data.frame(heatmap_data)
+names(heatmap_df) <- c("HourOfDay", "Frequency")
+
+# Plotting the map
+ggplot(heatmap_df, aes(x = HourOfDay, y = 1, fill = Frequency)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(title = "Heatmap of Fatal Crashes by Hour of Day",
+       x = "Hour of Day",
+       fill = "Crash Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+This temporal density map shows the frequency of fatal car crashes by only the hour of the day. This heat map suggests that time of the day does have a significant impact on instances of fatal car crashes. In particular, fatal car crashes seem to be more likely to occur in the evening or at night. This may be due to reduced visibility at later hours. The number of fatal car crashes peaks drastically between the hours of 5:00PM and 7:00PM. This is likely due to the compounding factors of reduced visibility at night and increased traffic with people leaving work. In the early morning hours between 1:00AM and 9:00AM, there are less occurrences of fatal crashes. However, there does appear to be a significant number of fatal crashes that occur between the hours of 4:00AM and 6:00AM. This is in contrast to the "danger zone" observed between the hours of 8:00AM and 10:00AM in the first temporal density map. That "danger zone" was explained increased traffic as people commuted from work. Increased traffic can also partially explain the peak in fatal car crashes between 4:00AM and 6:00AM. However, reduced visibility in early morning hours likely compounded the risks.
+
+The three temporal density plots above show that car crashes are more likely to occur during hours of high traffic when people are commuting to and from work. However, fatal car crashes are more likely caused by reduced visibility during darker hours, although amount of traffic is still a partially contributing factor.
+
+\pagebreak
+
+### Stack Area Plot of Contributing Factors and Crash Count by Year
+
+Now that we have an idea of which contributing factors to crashes are most common, we pose the following question: How have the frequency of contributing factors to crashes changed over time?
+
+```{r echo=FALSE, fig.width=10, fig.height=6}
+
+# Use a pipeline to create the stacked area plot data
+agg_data <- cleaned_crashes_data %>%
+  mutate(YEAR = as.numeric(format(as.Date(CRASH.DATE, "%m/%d/%Y"), "%Y"))) 
+
+agg_data <- sqldf('SELECT YEAR, [CONTRIBUTING.FACTOR.VEHICLE.1], COUNT(*) AS COUNT
+                   FROM agg_data
+                   WHERE [CONTRIBUTING.FACTOR.VEHICLE.1] != "Unspecified" 
+                      AND [CONTRIBUTING.FACTOR.VEHICLE.1] != ""
+                      AND [CONTRIBUTING.FACTOR.VEHICLE.1] IN 
+                        ("Driver Inattention/Distraction",
+                         "Failure to Yield Right-of-Way",
+                         "Following Too Closely",
+                         "Other Vehicular",
+                         "Passing Too Closely")
+                   GROUP BY YEAR, [CONTRIBUTING.FACTOR.VEHICLE.1]')
+
+# Create a color palette for the plot
+num_factors <- length(top_factors)
+colors <- colorRampPalette(brewer.pal(min(num_factors, 9), "Set1"))(num_factors)
+
+# Create the stacked area plot for the top 5 factors
+ggplot(agg_data, aes(x = YEAR, y = COUNT,
+                             fill = CONTRIBUTING.FACTOR.VEHICLE.1)) +
+  geom_area(position = 'stack') +
+  scale_fill_manual(values = colors) +
+  labs(title = "Trends of Top 5 Contributing Factors to Crashes Over Time",
+       x = "Year",
+       y = "Number of Crashes",
+       fill = "Contributing Factor") +
+  theme_minimal() +
+  theme(axis.title = element_text(size = 12),
+        plot.title = element_text(size = 12, hjust = 0.5),
+        legend.position = "right",
+        legend.title = element_text(size = 8),
+        legend.text = element_text(size = 6),
+        legend.key.size = unit(0.5, "cm"),
+        axis.text.x = element_text(size = 8, angle = 45, hjust = 1),
+        legend.margin = margin(0, 0, 0, 0),
+        panel.grid.major = element_line(colour = "grey"),
+        panel.grid.minor = element_line(colour = "lightgrey"),
+        panel.background = element_rect(fill = "white")) +
+  scale_x_continuous(breaks = seq(min(agg_data$YEAR), max(agg_data$YEAR), by = 2)) +
+  facet_wrap(~ CONTRIBUTING.FACTOR.VEHICLE.1, ncol = 3)
+
+```
+
+The stacked area plot of the top 5 contributing factors to car crashes by year shows how the top contributing factors changed over the years. What can be seen is that the number of crashes peaked in 2018 at around 67,500 crashes and that driver inattention/distraction grew rapidly from 2012 to 2018. Then, all contributing factors started to decrease 2020 to 2024 most likely due to COVID and stay-at-home orders. This graph gives us a better understanding of the relationship between the year, number of crashes, and contributing factors.
+
+\pagebreak
+
+### Jitter Plot of Fatalities and Injuries by Contributing Factor
+
+```{r echo=FALSE}
+
+# filter the data to only include crashes with injuries or fatalities
+filtered_data <- sqldf('SELECT * FROM cleaned_crashes_data cd
+                        WHERE 
+                          cd.[NUMBER.OF.PERSONS.INJURED] + 
+                            cd.[NUMBER.OF.PERSONS.KILLED] > 0
+                          AND cd.[CONTRIBUTING.FACTOR.VEHICLE.1] IN 
+                            ("Driver Inattention/Distraction",
+                              "Failure to Yield Right-of-Way",
+                              "Following Too Closely",
+                              "Other Vehicular",
+                              "Passing Too Closely")')
+
+
+# Create the jitter plot for the top 5 contributing factors
+ggplot(data = filtered_data) +
+  aes(x = CONTRIBUTING.FACTOR.VEHICLE.1,
+      y = NUMBER.OF.PERSONS.INJURED + NUMBER.OF.PERSONS.KILLED,
+      alpha = I(1/5),
+      color = CONTRIBUTING.FACTOR.VEHICLE.1) +
+  geom_jitter() +
+  coord_flip() +
+  theme(axis.text.y = element_text(angle = 30, hjust = 0.5, vjust = 0.5),
+        axis.title.y = element_text(vjust = 2.5),
+        plot.title = element_text(size = 10),
+        legend.position = "none") +
+  labs(title = "Number of People Injured or Killed in Crashes Caused by Top Factors",
+       y = "Number of People Injured or Killed",
+       x = "Contributing Factors")
+```
+
+The jitter plot shows the number of people injured or killed in crashes caused by the top 5 factors. The plot shows that the most common contributing factors to crashes are also correlated with more violent crashes. Driver inattention or distraction caused the most violent crashes. This plot gives more insight into how different contributing factors of crashes relate to injuries and deaths.
+
+\pagebreak
+
+### Bubble Plot Between Contributing Factor and Vehicle Type
+
+```{r echo=FALSE, fig.width=10, fig.height=6}
+
+# Fetch the data for the bubble plot
+bubble_data <- cleaned_crashes_data %>%
+  group_by(Contributing_Factor_Category, VEHICLE_CATEGORY) %>%
+  summarise(Count = n(), .groups = 'drop')
+
+# Create discrete size intervals from the Count variable
+bubble_data$Size <- cut(bubble_data$Count, 
+                        breaks = pretty(bubble_data$Count, n = 10), 
+                        include.lowest = TRUE, right = FALSE, labels = FALSE)
+
+# Create the bubble chart with discrete sizes
+ggplot(bubble_data, aes(x = Contributing_Factor_Category, 
+                        y = VEHICLE_CATEGORY, 
+                        size = factor(Size))) +
+  geom_point(alpha = 0.6, color = "blue") +
+  scale_size_manual(values = c(3, 6, 9, 12, 15, 18, 21, 24, 27, 30)) +
+  labs(title = "Crashes by Contributing Factor and Vehicle Category",
+       x = "Contributing Factor Category",
+       y = "Vehicle Category",
+       size = "Relative Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(size = 14),
+        legend.title = element_text(size = 10)) +
+  guides(size = guide_legend(override.aes = list(alpha = 1)))
+
+```
+
+The bubble plot shows the relationship between contributing factors and vehicle types in car crashes. The relative sizing of the bubbles are indicative of which contributing factors, in combination with the type of vehicle involved, result in the most crashes. The plot shows that the most common contributing factors are related broadly to driver behavior, and the most common vehicle types involved in crashes are passenger vehicles. A working hypothesis for why this is the case is that passenger vehicles are the most common type of vehicle on the road and previous analysis has shown that driver inattention/distraction is the most common contributing factor to crashes. Additionally, the insights gained from the time analysis showed clusters of crashes during rush hours. Holistically, it is not hard to envision the scenario in which commuters are in a rush to get to work or home, and are not paying attention to the road, resulting in crashes. 
+
+
+\pagebreak
+
+### Key Findings From the Exploratory Data Analysis
+
+**Borough-wise Crash Frequency:** We found that some boroughs experience more crashes than others, with Brooklyn leading the chart. This could relate to population density, traffic flow, or other urban factors.
+
+**Crash Density and Landmarks:** A map showing where crashes happen most frequently revealed that central areas with heavy traffic and significant landmarks are hotspots for incidents.
+
+**Time of Day Analysis:** Crashes peak during evening rush hours, suggesting that the end-of-day commute might be particularly hazardous. Fatal crashes are prominent during the evening and the night, when darkness causes reduced visibility.
+
+**Contributing Factors:** Distracted driving emerged as a leading cause of accidents, highlighting the need for increased awareness and possibly stricter regulations on driver attention.
+
+**Temporal Trends:** The frequency of crashes caused by the top 5 contributing factors has been decreasing since 2020, which could be due to the COVID-19 pandemic.
+
+\pagebreak
+
+## Predictive Modeling
+
+### Decision Tree
+
+```{r echo=FALSE}
+
+# Merge the two data sets on the common key COLLISION_ID
+people_crashes_merged <- sqldf('SELECT * FROM cleaned_crashes_data cd
+                                JOIN data_people dp
+                                ON cd.COLLISION_ID = dp.COLLISION_ID')
+
+```
+
+```{r echo=FALSE, fig.width=12, fig.height=10}
+
+# Prepare the data for modeling
+dt_model_data <- people_crashes_merged %>%
+  select(BOROUGH, CRASH.TIME, PERSON_AGE, 
+         NUMBER.OF.PERSONS.KILLED, PERSON_TYPE) %>%
+  mutate(CRASH.TIME = as.numeric(substr(CRASH.TIME, 1, 2))) %>%
+  mutate(PERSON_AGE = as.numeric(PERSON_AGE)) %>%
+  mutate_at(vars(BOROUGH, PERSON_TYPE), as.factor) %>%
+  na.omit()
+
+# Split the data into training and testing sets
+set.seed(123)
+dt_train_indices <- sample(1:nrow(dt_model_data), 0.7 * nrow(dt_model_data))
+dt_train_data <- dt_model_data[dt_train_indices, ]
+dt_test_data <- dt_model_data[-dt_train_indices, ]
+
+# Train a decision tree model w/ abbreviated contributing factors
+tree_model <- rpart(NUMBER.OF.PERSONS.KILLED ~ .,
+                    data = dt_train_data,
+                    method = "anova",
+                    control = rpart.control(minsplit = 10, cp = 0.001))
+
+```
+
+```{r, echo=FALSE, results='asis'}
+
+# Make predictions on the test set
+predictions <- predict(tree_model, dt_test_data)
+
+# # Calculate MAE and RMSE
+errors <- data.frame(MAE = mean(abs(predictions - dt_test_data$NUMBER.OF.PERSONS.KILLED)),
+                     RMSE = sqrt(mean((predictions - dt_test_data$NUMBER.OF.PERSONS.KILLED)^2)))
+kable(errors, caption = "Model Performance Metrics")
+
+```
+
+```{r echo=FALSE, warning=FALSE}
+
+# Visualize the decision tree (adjust to make more readable)
+rpart.plot(tree_model,
+           main = "Decision Tree Model for Predicting Fatalities in Car Crashes",
+           type = 4,
+           extra = 101,
+           under = TRUE,
+           fallen.leaves = TRUE,
+           compress = TRUE,
+           branch = 0.5,
+           box.palette = "Blues",
+           shadow.col = "gray",
+           cex = 0.4)
+
+```
+
+Before interpreting the decision tree, it is important to understand the theoretical underpinnings of the model. Decision trees are a type of supervised learning algorithm that is mostly used in classification problems. It works for both categorical and continuous input and output variables. The goal of using a decision tree is to create a model that predicts the value of a target variable by learning simple decision rules inferred from the data features. The decision tree model is a flowchart-like structure in which each internal node represents a test on an attribute, each branch represents the outcome of the test, and each leaf node represents a class label. The paths from the root to the leaf represent classification rules. Each branch represents a choice or condition leading to different outcomes.
+
+Understanding the hyper parameters of the decision tree and the rationale behind is also important. The minimum number of observations that must exist in a node in order for a split to be attempted is 10. The complexity parameter (cp) is set to 0.001, which is the cost complexity parameter used for pruning the tree. The model is trained on 70% of the data and tested on the remaining 30%. The model uses ANOVA (Analysis of Variance) as the method for splitting the data. 
+
+In this case, the decision tree model was trained to predict the number of people killed in car crashes based on the following features: BOROUGH, PERSON_TYPE, CRASH.TIME, and PERSON_AGE. The model was trained on 70% of the data and tested on the remaining 30%. The model achieved a Mean Absolute Error (MAE) of 0.003833112 and a Root Mean Squared Error (RMSE) of 0.05435656. The decision tree model is visualized above. The model is quite complex and difficult to interpret, but it is able to predict the number of people killed in car crashes with a high degree of accuracy. Most likely the model is overfitting, and the complexity of the model is not necessary for the task at hand. However, the model is a good starting point for predicting the number of people killed in car crashes.
+
+\pagebreak
+
+### Statistical Modeling with Generalized Linear Model
+
+```{r echo=FALSE}
+
+# Prepare the data for modeling
+
+# Select the relevant columns for the model from each dataset
+data_crash_cleaned <- sqldf('SELECT COLLISION_ID, [CRASH.DATE], [CRASH.TIME], 
+                              BOROUGH, LATITUDE, LONGITUDE, 
+                              [NUMBER.OF.PERSONS.INJURED], 
+                              [NUMBER.OF.PERSONS.KILLED]
+                            FROM data_crashes')
+
+data_vehicle_cleaned <- sqldf('SELECT COLLISION_ID, VEHICLE_TYPE, VEHICLE_YEAR,
+                                DRIVER_SEX, STATE_REGISTRATION
+                              FROM data_vehicles')
+
+data_person_cleaned <- sqldf('SELECT COLLISION_ID, PERSON_TYPE, PERSON_AGE,
+                                PERSON_SEX, UNIQUE_ID
+                              FROM data_people')
+
+# Merge the three datasets on the common key COLLISION_ID
+crash_vehicle_merged <- merge(data_crash_cleaned, data_vehicle_cleaned, 
+                              by = "COLLISION_ID")
+
+# Merge the merged dataset with the person dataset on the common keys 
+# COLLISION_ID and VEHICLE_ID
+final_merged_dataset <- merge(crash_vehicle_merged, data_person_cleaned, 
+                              by = "COLLISION_ID")
+
+# # Handle missing values
+final_merged_dataset <- sqldf('SELECT * FROM final_merged_dataset fmd
+                               WHERE
+                                 fmd.BOROUGH IS NOT NULL AND 
+                                 fmd.BOROUGH != "" AND
+                                 fmd.LATITUDE IS NOT NULL AND 
+                                 fmd.LATITUDE > 40 AND fmd.LATITUDE < 41 AND
+                                 fmd.LONGITUDE IS NOT NULL AND 
+                                 fmd.LONGITUDE < -73 AND fmd.LONGITUDE > -75 AND
+                                 fmd.[CRASH.DATE] IS NOT NULL AND
+                                 fmd.[CRASH.TIME] IS NOT NULL AND
+                                 fmd.[NUMBER.OF.PERSONS.INJURED] IS NOT NULL AND
+                                 fmd.[NUMBER.OF.PERSONS.KILLED] IS NOT NULL AND
+                                 fmd.VEHICLE_TYPE IS NOT NULL AND
+                                 fmd.VEHICLE_YEAR IS NOT NULL AND
+                                 fmd.[DRIVER_SEX] IS NOT NULL AND
+                                 fmd.[PERSON_AGE] IS NOT NULL AND
+                                 fmd.[UNIQUE_ID] IS NOT NULL')
+
+```
+
+```{r echo=FALSE, results='asis'}
+
+# transmutate CRASH.TIME to 4-hour intervals to reduce the number of levels
+glm_data <- final_merged_dataset %>%
+  # mutate(CRASH.TIME = as.numeric(substr(CRASH.TIME, 1, 2))) %>%
+  mutate(CRASH.TIME = as.numeric(format(strptime(CRASH.TIME, format = "%H:%M"), "%H"))) %>%
+  mutate(CRASH.TIME = case_when(
+    CRASH.TIME >= 0 & CRASH.TIME < 6 ~ "Late Night",
+    CRASH.TIME >= 6 & CRASH.TIME < 12 ~ "Morning",
+    CRASH.TIME >= 12 & CRASH.TIME < 18 ~ "Afternoon",
+    CRASH.TIME >= 18 & CRASH.TIME <= 23 ~ "Evening"
+  )) %>%
+  mutate(CRASH.TIME = as.factor(CRASH.TIME))
+
+# transmutate PERSON_AGE to age groups to reduce the number of levels
+glm_data <- glm_data %>%
+  mutate(PERSON_AGE = case_when(
+    PERSON_AGE >= 0 & PERSON_AGE < 18 ~ "Under 18",
+    PERSON_AGE >= 18 & PERSON_AGE < 25 ~ "18-24",
+    PERSON_AGE >= 25 & PERSON_AGE < 35 ~ "25-34",
+    PERSON_AGE >= 35 & PERSON_AGE < 45 ~ "35-44",
+    PERSON_AGE >= 45 & PERSON_AGE < 55 ~ "45-54",
+    PERSON_AGE >= 55 & PERSON_AGE < 65 ~ "55-64",
+    PERSON_AGE >= 65 ~ "65+"
+  )) %>%
+  mutate(PERSON_AGE = as.factor(PERSON_AGE))
+
+# transmute CRASH.DATE to day of the week to reduce the number of levels
+glm_data <- glm_data %>%
+  mutate(CRASH.DATE = weekdays(as.Date(CRASH.DATE, format = "%m/%d/%Y"), abbreviate = FALSE)) %>%
+  mutate(CRASH.DATE = as.factor(CRASH.DATE))
+  
+
+set.seed(123) # Set seed for reproducibility
+subsampled_data <- glm_data %>%
+  sample_n(10000) # Sub sample the data to speed up the model fitting
+
+# Fit a generalized linear model to predict the number of people injured/killed in car crashes
+glm_model <- glm(NUMBER.OF.PERSONS.INJURED + NUMBER.OF.PERSONS.KILLED ~ 
+                   CRASH.TIME + BOROUGH + DRIVER_SEX + PERSON_AGE + CRASH.DATE,
+                 data = subsampled_data,
+                 family = poisson)
+
+
+# Display the summary of the fitted model
+tab_model(glm_model)
+
+```
+
+Generalized Linear Models (GLMs) are an extension of traditional linear regression models that allow for response variables to have error distributions other than the normal distribution. GLMs are used to model relationships between a scalar-dependent variable and one or more independent variables. The model consists of three components: (1) the random component, which specifies the distribution of the response variable; (2) the systematic component, which is the linear combination of the predictors; and (3) the link function, which connects the mean of the distribution of the response variable to the linear predictor. In this analysis, we utilize a Poisson distribution, appropriate for count data such as the number of people injured or killed in car crashes. The Poisson distribution models data where events occur independently within a fixed interval and assumes that the number of events is proportional to the length of the interval.
+
+The generalized linear model was trained to predict the number of people injured or killed in car crashes based on the following features: CRASH.TIME, BOROUGH, DRIVER_SEX, PERSON_AGE, and CRASH.DATE. The model was trained on a subsample of 10,000 rows of the data in order to speed up the model fitting process. The fitted GLM (whose results are shown above) provides a summary of the model's coefficients, standard errors, z-values, and p-values. The coefficients represent the estimated effect of each predictor variable on the response variable, while the p-values indicate the statistical significance of these effects. The results indicate that the time of day, borough, driver's sex, the person's age group, and the day of the week significantly influence the likelihood of injuries or fatalities. For instance, evening times and late nights have higher associated counts of injuries or fatalities compared to other times of the day, highlighting riskier periods for road users. Manhattan, compared to other boroughs, shows a significantly lower count, suggesting geographical differences in traffic safety or reporting practices. Additionally, the model reveals the older age groups (55-64, 65+) have a lower likelihood of being involved in injurious or fatal crashes compared to younger age groups. The day of the week also plays a role, with Thursday showing a higher likelihood of crashes compared to other days, suggesting possible variations in traffic patterns or behaviors.
+
+It is important to note, however, that while GLM provides valuable insights, it is based on associations and does not imply causation. The model's assumptions, including the independence of events and the suitability of the Poisson distribution for this data, should be carefully considered when interpreting the results and planning interventions.
+
+\pagebreak
+
+## Conclusion
+
+Through our exploration, we've unearthed patterns and insights that shed light on the complex nature of car crashes in New York City. Our findings point toward actionable insights, such as the need for targeted interventions during high-risk times of the day, the importance of considering geographical differences in traffic safety, and the potential for tailored interventions for different age groups. While our study offers detailed analysis, it is only the beginning of a broader effort to understand and address the multifaceted issue of car crashes. Future work could involve more advanced predictive modeling, such as ensemble methods or neural networks, to improve the accuracy of our predictions. Additionally, further research could explore the impact of external factors, such as weather conditions, road infrastructure, and vehicle safety features, on the likelihood of car crashes. By continuing to investigate and address the complex issue of car crashes, we can work toward a safer and more sustainable future for all road users.
+
+As it stands, some key findings from our analysis can be summarized as follows into these practical insights:
+
+\- Most crashes occur during morning and evening rush hours, suggesting the need for targeted interventions during these high-risk times.
+
+\- The borough of Manhattan shows a significantly lower count of injuries or fatalities compared to other boroughs, suggesting geographical differences in traffic safety or reporting practices
+
+\- The leading cause of car crashes is driver inattention or distraction, highlighting the need for increased awareness and possibly stricter regulations on driver attention.
+
+\- Fatal crashes are prominent during the evening and the night, when darkness causes reduced visibility.
+
+\- The top 5 contributing factors to car crashes have been decreasing since 2020, which could be due to the COVID-19 pandemic and stay-at-home orders. The lasting impact of the pandemic on traffic safety remains to be seen.
+
+
+```{r, include=FALSE, echo=FALSE}
+
+# Close the connection to the SQLite database
+dbDisconnect(con)
+
+```
