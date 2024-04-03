@@ -36,6 +36,7 @@ if (!require("DBI")) install.packages("DBI")
 if (!require("RSQLite")) install.packages("RSQLite")
 if (!require("sqldf")) install.packages("sqldf")
 if (!require("kableExtra")) install.packages("kableExtra")
+if (!require("shiny")) install.packages("shiny")
 
 # Load the required packages
 library(reshape2)
@@ -54,6 +55,7 @@ library(DBI)
 library(RSQLite)
 library(sqldf)
 library(kableExtra)
+library(shiny)
 
 ```
 
@@ -190,6 +192,22 @@ cleaned_crashes_data <- categorize_factors(data_crashes) %>%
   select(-LOCATION) %>%
   # Finally, remove any remaining rows with NA values in any column
   na.omit()
+
+
+# Un-comment the following code if you want to run the Shiny app
+## FOR SHINY APP: save cleaned data to SQLite database for use in Shiny app
+# save as a db file in the data folder
+# app_data <- cleaned_crashes_data %>%
+#   select(COLLISION_ID, Contributing_Factor_Category, CRASH.DATE, CRASH.TIME, BOROUGH) %>%
+#   mutate(CRASH.DATE = as.character(CRASH.DATE))  # convert Date to character for SQLite
+# 
+# 
+# # save app_data to new SQLite database for use in Shiny app
+# app_con <- dbConnect(RSQLite::SQLite(), "../data/app_data.db")
+# dbWriteTable(app_con, "app_data", app_data, overwrite = TRUE)
+# 
+# dbDisconnect(app_con)
+
 
 ```
 
@@ -887,6 +905,13 @@ As it stands, some key findings from our analysis can be summarized as follows i
 
 # Close the connection to the SQLite database
 dbDisconnect(con)
+
+```
+
+```{r, include=FALSE}
+
+## Optional: Run the Shiny app
+# runApp(appDir = "../app") # NOTE: path is relative to this file
 
 ```
 
