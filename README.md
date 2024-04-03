@@ -1,5 +1,7 @@
 # NYC Crash Data Analysis
 
+Check out the demo of our Shiny app [here](https://micahkepe.shinyapps.io/NYC-Crashes/).
+
 ## Prerequisites
 
 To run the code in this repository, you will need to have the following installed:
@@ -36,10 +38,33 @@ For a more detailed breakdown of the data sets used and how they relate, please 
 
 To see our incremental data analysis, please see the `reports` folder. This folder contains both the `.qmd` files and their corresponding `.pdf` files of each of our report iterations.
 
+## Running the Shiny App Locally (Optional)
+
+To get the database file for the Shiny, un-comment the following code block in the `reports/report_file.qmd` file (lines 198-209):
+
+``` r
+
+# FOR SHINY APP: save cleaned data to SQLite database for use in Shiny app
+save as a db file in the data folder
+app_data <- cleaned_crashes_data %>%
+  select(COLLISION_ID, Contributing_Factor_Category, CRASH.DATE, CRASH.TIME, BOROUGH) %>%
+  mutate(CRASH.DATE = as.character(CRASH.DATE))  # convert Date to character for SQLite
+
+
+# save app_data to new SQLite database for use in Shiny app
+app_con <- dbConnect(RSQLite::SQLite(), "../data/app_data.db")
+dbWriteTable(app_con, "app_data", app_data, overwrite = TRUE)
+
+dbDisconnect(app_con)
+
+```
+This will save the cleaned data to a new SQLite database file named `app_data.db` in the `app/data/` folder. This database file will be used by the Shiny app to display the data. If the file already exists, it will be overwritten.
+
+The Shiny app can be run by opening the `app.R` file in the in `app/` directory in RStudio and clicking the "Run App" button in the top right corner of the script editor. This will open the app in a new window in your default web browser.
+
 ## Contributors
 
+-   [Micah Kepe](https://www.linkedin.com/in/micah-kepe/)
+-   [Zachary Kepe](https://www.linkedin.com/in/zachary-kepe-6801b7241/)
 -   [Kevin Lei](https://www.linkedin.com/in/lei-kevin/)
 -   [Giulia Costantini](https://www.linkedin.com/in/costantini-giulia/)
--   [Zachary Kepe](https://www.linkedin.com/in/zachary-kepe-6801b7241/)
--   [Micah Kepe](https://www.linkedin.com/in/micah-kepe/)
-

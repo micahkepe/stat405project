@@ -29,9 +29,7 @@ library(sqldf)
 library(dplyr)
 library(ggplot2)
 
-
-# Load the data from ("../data/app_data.db")
-app_con <- dbConnect(RSQLite::SQLite(), "../data/app_data.db")
+app_con <- dbConnect(RSQLite::SQLite(), file.path("data", "app_data.db"))
 
 # Define UI for the app based on the description above
 ui <- fluidPage(
@@ -39,10 +37,9 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       checkboxGroupInput("factors", "Select contributing factors to include:",
-                         choices = dbGetQuery(app_con, "SELECT DISTINCT Contributing_Factor_Category FROM app_data")$Contributing_Factor_Category,
-                         selected = unique(dbGetQuery(app_con, "SELECT DISTINCT Contributing_Factor_Category FROM app_data")$Contributing_Factor_Category)),
+                         choices = NULL),
       selectInput("borough", "Select a borough:",
-                  choices = c("All Boroughs", dbGetQuery(app_con, "SELECT DISTINCT BOROUGH FROM app_data")$BOROUGH),
+                  choices = NULL,
                   selected = "All Boroughs"),
       sliderInput("year", "Select a year:",
                   min = 2012, max = 2024, value = 2012, timeFormat = "%Y", sep = "", step = 1),
@@ -57,8 +54,20 @@ ui <- fluidPage(
 )
 
 # Define server logic
-server <- function(input, output) {
-  # Disconnect from the database when server stops
+server <- function(input, output, session) {
+  # Connect to the database when the app starts
+  app_con <- dbConnect(RSQLite::SQLite(), file.path("data", "app_data.db"))
+  
+  # Update the choices for contributing factors and boroughs based on the data
+  updateCheckboxGroupInput(session, "factors",
+                           choices = dbGetQuery(app_con, "SELECT DISTINCT Contributing_Factor_Category FROM app_data")$Contributing_Factor_Category,
+                           selected = unique(dbGetQuery(app_con, "SELECT DISTINCT Contributing_Factor_Category FROM app_data")$Contributing_Factor_Category))
+  
+  updateSelectInput(session, "borough",
+                    choices = c("All Boroughs", dbGetQuery(app_con, "SELECT DISTINCT BOROUGH FROM app_data")$BOROUGH),
+                    selected = "All Boroughs")
+  
+  # Disconnect from the database when the app stops
   onStop(function() {
     dbDisconnect(app_con)
   })
@@ -128,7 +137,7 @@ server <- function(input, output) {
         strip.text = element_text(size = 12, face = "bold"),
         panel.spacing = unit(1, "lines"),
         aspect.ratio = 1,
-        legend.position = "right",
+        legend.position = "right"
       ) +
       guides(color = guide_legend(title.position = "top", title.hjust = 0.5)) +
       ggtitle("Car Crashes by Contributing Factor and Time of Day") +
@@ -138,5 +147,4 @@ server <- function(input, output) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
-   
                     
