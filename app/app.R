@@ -1,5 +1,4 @@
 # Shiny app to demonstrate the findings from reports.
-
 ## APP DESCRIPTION
 # In our killer plot, we visualize the relative frequency of car crashes by
 # contributing factor and time of day in a unique 24-hour clock format. The
@@ -35,8 +34,8 @@ ui <- fluidPage(
       sliderInput("year", "Select a year:",
                   min = 2012, max = 2024, value = 2012, timeFormat = "%Y", sep = "", step = 1),
       sliderInput("temperature", "Softmax temperature:",
-                  min = 0.1, max = 10, value = 1, step = 0.1),
-      helpText("The softmax temperature controls the aggressiveness of the softmax function. A higher temperature will make the peaks more pronounced, while a lower temperature will make the distribution more uniform. The default value is 1."),
+                  min = 1, max = 100, value = 10, step = 1),
+      helpText("The softmax temperature controls the aggressiveness of the softmax function. A higher temperature will make the peaks more pronounced, while a lower temperature will make the distribution more uniform. The default value is 10."),
       helpText("The dotted line represents the average frequency of crashes for each contributing factor.")
     ),
     mainPanel(
@@ -87,10 +86,11 @@ server <- function(input, output, session) {
     data_summary <- data_filtered %>%
       mutate(
         CRASH.HOUR = as.integer(substr(CRASH.TIME, 1, 2)),
+        CRASH.MINUTE = as.integer(substr(CRASH.TIME, 4, 5)),
+        CRASH.TIME_DECIMAL = CRASH.HOUR + CRASH.MINUTE / 60,
         CRASH.AMPM = ifelse(CRASH.HOUR < 12, "AM", "PM")
       ) %>%
-      mutate(CRASH.HOUR = CRASH.HOUR %% 24) %>%
-      group_by(Contributing_Factor_Category, CRASH.HOUR, CRASH.AMPM) %>%
+      group_by(Contributing_Factor_Category, CRASH.TIME_DECIMAL, CRASH.AMPM) %>%
       summarize(count = n(), .groups = "drop") %>%
       ungroup()
     
@@ -116,15 +116,15 @@ server <- function(input, output, session) {
       left_join(avg_freq, by = "Contributing_Factor_Category")
     
     # Create the plot with separate graphs for each contributing factor
-    ggplot(data_summary, aes(x = CRASH.HOUR, y = softmax_freq, color = CRASH.AMPM, group = CRASH.AMPM)) +
+    ggplot(data_summary, aes(x = CRASH.TIME_DECIMAL, y = softmax_freq, color = CRASH.AMPM, group = CRASH.AMPM)) +
       geom_line(linewidth = 1) +
       geom_line(aes(y = avg_freq), linetype = "dashed", color = "black", size = 0.5) +
       facet_wrap(~ Contributing_Factor_Category, ncol = 2) +
       coord_polar() +
       scale_x_continuous(
-        breaks = 0:23,  # Make sure this includes 0 and 23
-        labels = function(x) ifelse(x == 0, "00:00", paste0(sprintf("%02d", x %% 24), ":00")),  # Add label for 24:00
-        limits = c(0, 24)  # Explicitly set the limits to include 0 to 24
+        breaks = 0:23,
+        labels = function(x) paste0(sprintf("%02d", x), ":00"),
+        limits = c(0, 24)
       ) +
       scale_y_continuous(labels = scales::percent_format()) +
       labs(x = "Hour of the Day", color = "AM/PM") +
@@ -140,12 +140,11 @@ server <- function(input, output, session) {
       guides(color = guide_legend(title.position = "top", title.hjust = 0.5)) +
       ggtitle("Car Crashes by Contributing Factor and Time of Day") +
       labs(linetype = "Average Frequency")
-  }, height = 800) 
+  }, height = 800)
 }
 
 # Run the application
 shinyApp(ui = ui, server = server)
-
 
 
 
