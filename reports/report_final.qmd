@@ -84,6 +84,9 @@ data_people <- dbGetQuery(con, "SELECT * FROM people
 data_vehicles <- dbGetQuery(con, "SELECT * FROM vehicles
                                   WHERE COLLISION_ID IN (SELECT COLLISION_ID FROM crashes)")
 
+# Close the connection to the SQLite database
+dbDisconnect(con)
+
 ```
 
 \pagebreak
@@ -245,7 +248,10 @@ app_data <- cleaned_crashes_data %>%
   select(COLLISION_ID, Contributing_Factor_Category, CRASH.DATE, CRASH.TIME, BOROUGH) %>%
   mutate(CRASH.DATE = as.character(CRASH.DATE))  # convert Date to character for SQLite
 
-# TODO: Make the ./app/data/ directory if it doesn't exist 
+# Make the ./app/data/ directory if it doesn't exist
+if (!dir.exists("../app/data")) {
+  dir.create("../app/data")
+}
 
 # save app_data to new SQLite database for use in Shiny app
 app_con <- dbConnect(RSQLite::SQLite(), "../app/data/app_data.db")
@@ -943,12 +949,6 @@ As it stands, some key findings from our analysis can be summarized as follows i
 
 \- The top 5 contributing factors to car crashes have been decreasing since 2020, which could be due to the COVID-19 pandemic and stay-at-home orders. The lasting impact of the pandemic on traffic safety remains to be seen.
 
-```{r, include=FALSE, echo=FALSE}
-
-# Close the connection to the SQLite database
-dbDisconnect(con)
-
-```
 
 ```{r, include=FALSE}
 
