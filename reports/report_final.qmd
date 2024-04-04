@@ -104,31 +104,76 @@ The NYC OpenData dataset contains details of motor vehicle collision occurrences
 
 ```{r echo=FALSE}
 
-# Function to help with text mining for mapping contributing factors.
+# Function for categorizing contributing factors
 categorize_factors <- function(data_crashes) {
   categorized_data <- sqldf("
-    SELECT *, 
-    CASE 
-      WHEN [CONTRIBUTING.FACTOR.VEHICLE.1] IN ('Driver Inattention/Distraction',
-      'Alcohol Involvement', 'Aggressive Driving/Road Rage', 'Unsafe Speed',
-      'Fell Asleep', 'Cell Phone (hand-held)', 'Texting', 'Driver Inexperience',
-      'Lost Consciousness', 'Illnes', 'Fatigued/Drowsy',
-      'Prescription Medication', 'Drugs (Illegal)', 'Illness') THEN
-      'Driver Behavior'
-      WHEN [CONTRIBUTING.FACTOR.VEHICLE.1] IN ('Brakes Defective',
-      'Tire Failure/Inadequate', 'Headlights Defective', 'Tow Hitch Defective',
-      'Vehicle Vandalism') THEN 'Vehicle Condition'
-      WHEN [CONTRIBUTING.FACTOR.VEHICLE.1] IN ('Pavement Slippery',
-      'View Obstructed/Limited', 'Obstruction/Debris', 'Glare',
-      'Pavement Defective') THEN 'Road and Environmental Conditions'
-      WHEN [CONTRIBUTING.FACTOR.VEHICLE.1] IN ('Traffic Control Disregarded',
-      'Failure to Yield Right-of-Way', 'Passing or Lane Usage Improper',
-      'Traffic Control Device Improper/Non-Working') THEN 'Traffic Control'
+    SELECT *,
+    CASE
+      WHEN `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Aggressive Driving/Road Rage' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Backing Unsafely' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Cell Phone (hand-held)' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Cell Phone (hands-free)' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Driver Inattention/Distraction' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Driver Inexperience' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Failure to Keep Right' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Failure to Yield Right-of-Way' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Following Too Closely' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Listening/Using Headphones' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Other Electronic Device' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Passing or Lane Usage Improper' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Passing Too Closely' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Reaction to Other Uninvolved Vehicle' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Reaction to Uninvolved Vehicle' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Texting' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Turning Improperly' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Unsafe Lane Changing' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Unsafe Speed' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Using On Board Navigation Device'
+      THEN 'Driver Behavior'
+      
+      WHEN `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Alcohol Involvement' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Fatigued/Drowsy' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Fell Asleep' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Drugs (Illegal)' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Illness' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Lost Consciousness' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Physical Disability' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE ' Prescription Medication'
+      THEN 'Driver Condition'
+    
+      WHEN `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Accelerator Defective' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Brakes Defective' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Headlights Defective' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Other Lighting Defects' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Other Vehicular' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Oversized Vehicle' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Steering Failure' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Tinted Windows' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Tire Failure/Inadequate' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Tow Hitch Defective' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Vehicle Vandalism' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Windshield Inadequate'
+      THEN 'Vehicle Condition'
+
+      WHEN `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Glare' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Lane Marking Improper/Inadequate' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Obstruction/Debris' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Outside Car Distraction' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Pavement Defective' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Pavement Slippery' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Shoulders Defective/Improper' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'View Obstructed/Limited'
+      THEN 'Road/Environmental Conditions'
+
+      WHEN `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Traffic Control Device Improper/Non-Working' OR
+           `CONTRIBUTING.FACTOR.VEHICLE.1` LIKE 'Traffic Control Disregarded'
+      THEN 'Traffic Control'
+   
       ELSE 'Other'
-    END AS Contributing_Factor_Category
+    END AS 'Contributing_Factor_Category'
     FROM data_crashes
-  ")
-  return (categorized_data)
+    ")
+  return(categorized_data)
 }
 
 ```
@@ -194,19 +239,19 @@ cleaned_crashes_data <- categorize_factors(data_crashes) %>%
   na.omit()
 
 
-# Un-comment the following code if you want to run the Shiny app
-# # FOR SHINY APP: save cleaned data to SQLite database for use in Shiny app
-# # save as a db file in the data folder
-# app_data <- cleaned_crashes_data %>%
-#   select(COLLISION_ID, Contributing_Factor_Category, CRASH.DATE, CRASH.TIME, BOROUGH) %>%
-#   mutate(CRASH.DATE = as.character(CRASH.DATE))  # convert Date to character for SQLite
-# 
-# 
-# # save app_data to new SQLite database for use in Shiny app
-# app_con <- dbConnect(RSQLite::SQLite(), "../app/data/app_data.db")
-# dbWriteTable(app_con, "app_data", app_data, overwrite = TRUE)
-# 
-# dbDisconnect(app_con)
+# FOR SHINY APP: save cleaned data to SQLite database for use in Shiny app
+# save as a db file in the data folder
+app_data <- cleaned_crashes_data %>%
+  select(COLLISION_ID, Contributing_Factor_Category, CRASH.DATE, CRASH.TIME, BOROUGH) %>%
+  mutate(CRASH.DATE = as.character(CRASH.DATE))  # convert Date to character for SQLite
+
+# TODO: Make the ./app/data/ directory if it doesn't exist 
+
+# save app_data to new SQLite database for use in Shiny app
+app_con <- dbConnect(RSQLite::SQLite(), "../app/data/app_data.db")
+dbWriteTable(app_con, "app_data", app_data, overwrite = TRUE)
+
+dbDisconnect(app_con)
 
 ```
 
@@ -214,8 +259,8 @@ For the data cleaning process, we removed rows with missing or invalid values in
 
 As a result of the data cleaning process, the primary data set went from having 2,065,192 rows and 29 columns to having 1,382,320 rows and 28 columns. While this is a significant reduction in the number of rows, the data set is still large enough to perform meaningful analysis.
 
-
 ## Text Mining and Categorization
+
 In addition to the above data preprocessing and cleaning, we also performed text mining to aid in the categorization of contributing factors and vehicle types. The original contributing factors and vehicle types were quite granular and numerous, making it challenging to analyze the data effectively. By categorizing these factors and types, we can better understand the underlying trends and patterns in the data. For contributing factors, we categorized them into broader categories such as "Driver Behavior," "Vehicle Condition," "Road and Environmental Conditions," "Traffic Control," and "Other." For vehicle types, we categorized them into broader categories such as "Passenger Vehicles," "Commercial Vehicles," "Emergency Vehicles," "Motorcycles and Scooters," "Special Vehicles," and "Other." Doing so allows us to analyze the data more effectively and draw meaningful insights from it without getting lost in the details.
 
 \pagebreak
@@ -681,8 +726,7 @@ ggplot(bubble_data, aes(x = Contributing_Factor_Category,
 
 ```
 
-The bubble plot shows the relationship between contributing factors and vehicle types in car crashes. The relative sizing of the bubbles are indicative of which contributing factors, in combination with the type of vehicle involved, result in the most crashes. The plot shows that the most common contributing factors are related broadly to driver behavior, and the most common vehicle types involved in crashes are passenger vehicles. A working hypothesis for why this is the case is that passenger vehicles are the most common type of vehicle on the road and previous analysis has shown that driver inattention/distraction is the most common contributing factor to crashes. Additionally, the insights gained from the time analysis showed clusters of crashes during rush hours. Holistically, it is not hard to envision the scenario in which commuters are in a rush to get to work or home, and are not paying attention to the road, resulting in crashes. 
-
+The bubble plot shows the relationship between contributing factors and vehicle types in car crashes. The relative sizing of the bubbles are indicative of which contributing factors, in combination with the type of vehicle involved, result in the most crashes. The plot shows that the most common contributing factors are related broadly to driver behavior, and the most common vehicle types involved in crashes are passenger vehicles. A working hypothesis for why this is the case is that passenger vehicles are the most common type of vehicle on the road and previous analysis has shown that driver inattention/distraction is the most common contributing factor to crashes. Additionally, the insights gained from the time analysis showed clusters of crashes during rush hours. Holistically, it is not hard to envision the scenario in which commuters are in a rush to get to work or home, and are not paying attention to the road, resulting in crashes.
 
 \pagebreak
 
@@ -769,7 +813,7 @@ rpart.plot(tree_model,
 
 Before interpreting the decision tree, it is important to understand the theoretical underpinnings of the model. Decision trees are a type of supervised learning algorithm that is mostly used in classification problems. It works for both categorical and continuous input and output variables. The goal of using a decision tree is to create a model that predicts the value of a target variable by learning simple decision rules inferred from the data features. The decision tree model is a flowchart-like structure in which each internal node represents a test on an attribute, each branch represents the outcome of the test, and each leaf node represents a class label. The paths from the root to the leaf represent classification rules. Each branch represents a choice or condition leading to different outcomes.
 
-Understanding the hyper parameters of the decision tree and the rationale behind is also important. The minimum number of observations that must exist in a node in order for a split to be attempted is 10. The complexity parameter (cp) is set to 0.001, which is the cost complexity parameter used for pruning the tree. The model is trained on 70% of the data and tested on the remaining 30%. The model uses ANOVA (Analysis of Variance) as the method for splitting the data. 
+Understanding the hyper parameters of the decision tree and the rationale behind is also important. The minimum number of observations that must exist in a node in order for a split to be attempted is 10. The complexity parameter (cp) is set to 0.001, which is the cost complexity parameter used for pruning the tree. The model is trained on 70% of the data and tested on the remaining 30%. The model uses ANOVA (Analysis of Variance) as the method for splitting the data.
 
 In this case, the decision tree model was trained to predict the number of people killed in car crashes based on the following features: BOROUGH, PERSON_TYPE, CRASH.TIME, and PERSON_AGE. The model was trained on 70% of the data and tested on the remaining 30%. The model achieved a Mean Absolute Error (MAE) of 0.003833112 and a Root Mean Squared Error (RMSE) of 0.05435656. The decision tree model is visualized above. The model is quite complex and difficult to interpret, but it is able to predict the number of people killed in car crashes with a high degree of accuracy. Most likely the model is overfitting, and the complexity of the model is not necessary for the task at hand. However, the model is a good starting point for predicting the number of people killed in car crashes.
 
@@ -899,7 +943,6 @@ As it stands, some key findings from our analysis can be summarized as follows i
 
 \- The top 5 contributing factors to car crashes have been decreasing since 2020, which could be due to the COVID-19 pandemic and stay-at-home orders. The lasting impact of the pandemic on traffic safety remains to be seen.
 
-
 ```{r, include=FALSE, echo=FALSE}
 
 # Close the connection to the SQLite database
@@ -913,4 +956,3 @@ dbDisconnect(con)
 # runApp(appDir = "../app") # NOTE: path is relative to this file
 
 ```
-
