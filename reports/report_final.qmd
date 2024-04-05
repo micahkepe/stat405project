@@ -1,7 +1,7 @@
 ---
 title: "Group 3: Crash Analysis NYC"
 author: "Kevin Lei, Micah Kepe, Zachary Kepe, Giulia Costantini"
-date: "2024-02-27"
+date: "2024-04-5"
 format:
   pdf: default
   html: default
@@ -21,8 +21,9 @@ header-includes:
   - \fancyfoot[LE,RO]{\thepage}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, include=FALSE, cache=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      cache.path = "cache/")
 
 # # Install packages if not already installed
 if (!require("tidyverse")) install.packages("tidyverse")
@@ -37,6 +38,7 @@ if (!require("RSQLite")) install.packages("RSQLite")
 if (!require("sqldf")) install.packages("sqldf")
 if (!require("kableExtra")) install.packages("kableExtra")
 if (!require("shiny")) install.packages("shiny")
+if (!require("htmltools")) install.packages("htmltools")
 
 # Load the required packages
 library(reshape2)
@@ -56,18 +58,24 @@ library(RSQLite)
 library(sqldf)
 library(kableExtra)
 library(shiny)
+library(htmltools)
+
+# Create a "cache" directory if it doesn't exist
+if (!dir.exists("cache")) {
+  dir.create("cache")
+}
 
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, cache=TRUE}
 
 # Load the data sets
 # Load the SQLite database
 con <- dbConnect(RSQLite::SQLite(), "../data/nyc_crashes.db")
 
 # Load the primary data set of car crashes
-crash_query <- "SELECT * 
-                FROM crashes 
+crash_query <- "SELECT *
+                FROM crashes
                 WHERE BOROUGH IS NOT NULL AND BOROUGH != ''
                   AND LATITUDE IS NOT NULL AND LATITUDE > 40 AND LATITUDE < 41
                   AND LONGITUDE IS NOT NULL AND LONGITUDE < -73 AND LONGITUDE > -75
@@ -223,7 +231,7 @@ categorize_vehicle_types <- function(df) {
 
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, cache=TRUE}
 
 # Perform data cleaning and pre-processing
 cleaned_crashes_data <- categorize_factors(data_crashes) %>%
@@ -248,16 +256,21 @@ app_data <- cleaned_crashes_data %>%
   select(COLLISION_ID, Contributing_Factor_Category, CRASH.DATE, CRASH.TIME, BOROUGH) %>%
   mutate(CRASH.DATE = as.character(CRASH.DATE))  # convert Date to character for SQLite
 
+```
+
+```{r echo=FALSE}
+
 # Make the ./app/data/ directory if it doesn't exist
 if (!dir.exists("../app/data")) {
   dir.create("../app/data")
 }
 
 # save app_data to new SQLite database for use in Shiny app
-app_con <- dbConnect(RSQLite::SQLite(), "../app/data/app_data.db")
-dbWriteTable(app_con, "app_data", app_data, overwrite = TRUE)
-
-dbDisconnect(app_con)
+if (!file.exists("../app/data/app_data.db")) {
+  app_con <- dbConnect(RSQLite::SQLite(), "../app/data/app_data.db")
+  dbWriteTable(app_con, "app_data", app_data, overwrite = TRUE)
+  dbDisconnect(app_con)
+}
 
 ```
 
@@ -269,15 +282,13 @@ As a result of the data cleaning process, the primary data set went from having 
 
 In addition to the above data preprocessing and cleaning, we also performed text mining to aid in the categorization of contributing factors and vehicle types. The original contributing factors and vehicle types were quite granular and numerous, making it challenging to analyze the data effectively. By categorizing these factors and types, we can better understand the underlying trends and patterns in the data. For contributing factors, we categorized them into broader categories such as "Driver Behavior," "Vehicle Condition," "Road and Environmental Conditions," "Traffic Control," and "Other." For vehicle types, we categorized them into broader categories such as "Passenger Vehicles," "Commercial Vehicles," "Emergency Vehicles," "Motorcycles and Scooters," "Special Vehicles," and "Other." Doing so allows us to analyze the data more effectively and draw meaningful insights from it without getting lost in the details.
 
-\pagebreak
-
 ## Past Trends and Insights
 
 After cleaning the data, we performed an exploratory data analysis to identify trends and insights in the data and glean a better understanding of the factors that contribute to car crashes. Understanding the past trends of the data allows us to gain intuition before we do predictive modeling and make recommendations. The graphs and charts below tell a story of the historic trends in NYC car crashes.
 
 ### Frequency of Car Crashes by NYC Borough (2012-2024)
 
-```{r echo=FALSE, fig.width=10, fig.height=6}
+```{r echo=FALSE, fig.width=10, fig.height=6, warning=FALSE}
 
 # use population data from most recent census
 populations <- c(BRONX = 1.427e6, QUEENS = 2.271e6, BROOKLYN = 2.577e6, MANHATTAN = 1.629e6, STATEN_ISLAND = 475596)
@@ -325,6 +336,7 @@ text(x = bar_midpoints, y = -max(ordered_crash_percentage)/50,
 text(x = bar_midpoints, y = ordered_crash_percentage + 0.5,
      labels = sprintf("%.1f%%", ordered_crash_percentage), 
      cex = 0.7, pos = 3)
+
 ```
 
 We plotted the frequency of car crashes per borough in NYC. The goal of this graph was to gain a better understanding of which boroughs were more likely to result in car crashes.
@@ -332,8 +344,6 @@ We plotted the frequency of car crashes per borough in NYC. The goal of this gra
 The borough with the least car crashes is Staten Island at around 75,000 car crashes, while the borough with the most car crashes is Brooklyn with around 450,000 car crashes. This graph gives us a better understanding of the likelihood that a car crash will occur in a certain borough. However, a consideration that is not specified is the amount of traffic through the boroughs.
 
 An important caveat for this graphic is that the population counts used to determine the percentages are from the most recent census, and we did not factor in population change across borough from 2012-2024. This affects the accuracy of the derived percentages, but the general trends are still useful for understanding the likelihood of car crashes in each borough.
-
-\pagebreak
 
 ### Density of Car Crashes in NYC
 
@@ -406,8 +416,6 @@ par(old_par)
 
 Disregarding the unspecified contributing factors, the top 5 contributing factors to car crashes are: Driver Inattention/Distraction, Failure to Yield Right-of-Way, Backing Unsafely, Following Too Closely, and Other Vehicular. The pie chart shows that the top specified contributing factor to car crashes is Driver Inattention/Distraction, which accounts for 52.9% of the observed car crashes. However, an important consideration is that a large amount of the contributing factors are unspecified, which could affect the accuracy of the data. 531,539 crashes in the cleaned data set have unspecified contributing factors, which is 38% of the all crashes in the data. There was around twice as many crashes with unspecified contributing factors than the number of crashes with driver inattention as a contributing factor.
 
-\pagebreak
-
 ### Histogram of Car Crashes by Time of Day
 
 ```{r echo=FALSE, fig.width=10, fig.height=6}
@@ -430,8 +438,6 @@ ggplot(cleaned_crashes_data, aes(x = as.numeric(substr(CRASH.TIME, 1, 2)))) +
 ```
 
 The histogram of car crashes by time of day shows that the most car crashes occur around the hours of 3:00PM and 6:00PM. This is likely due to the fact that these are the hours when people are getting off work and are driving home. The least amount of car crashes occur around the hours of 3:00AM and 4:00AM, which is likely due to the fact that these are the hours when people are sleeping and there is less traffic on the road. This graph gives us a better understanding of when car crashes are most likely to occur. An important consideration that is that traffic patterns may vary seasonally and by day of the week, which could affect the number of car crashes.
-
-\pagebreak
 
 ### Line Plot of Top 3 Contributing Factors by Time of Day
 
@@ -479,8 +485,6 @@ ggplot(factor_by_hour, aes(x = HOUR, y = Count, color = CONTRIBUTING.FACTOR.VEHI
 ```
 
 The scatter plot of the top 3 contributing factors by time of day show how the top factors contribute to the number of car crashes throughout the day. What can be seen is that distracted driving is consistently the biggest factor contributing to car crashes. During hours with the most crashes, such as 8:00AM and 5:00PM, all 3 factors reach peaks. All contributing factors show that the crash amount increases between the hours of 8:00AM and 5:00PM and decreases outside of those hours. This graph gives us a better understanding of the relationship between time of day, number of crashes, and contributing factors.
-
-\pagebreak
 
 ### Temporal Density Maps
 
@@ -604,8 +608,6 @@ This temporal density map shows the frequency of fatal car crashes by only the h
 
 The three temporal density plots above show that car crashes are more likely to occur during hours of high traffic when people are commuting to and from work. However, fatal car crashes are more likely caused by reduced visibility during darker hours, although amount of traffic is still a partially contributing factor.
 
-\pagebreak
-
 ### Stack Area Plot of Contributing Factors and Crash Count by Year
 
 Now that we have an idea of which contributing factors to crashes are most common, we pose the following question: How have the frequency of contributing factors to crashes changed over time?
@@ -660,8 +662,6 @@ ggplot(agg_data, aes(x = YEAR, y = COUNT,
 
 The stacked area plot of the top 5 contributing factors to car crashes by year shows how the top contributing factors changed over the years. What can be seen is that the number of crashes peaked in 2018 at around 67,500 crashes and that driver inattention/distraction grew rapidly from 2012 to 2018. Then, all contributing factors started to decrease 2020 to 2024 most likely due to COVID and stay-at-home orders. This graph gives us a better understanding of the relationship between the year, number of crashes, and contributing factors.
 
-\pagebreak
-
 ### Jitter Plot of Fatalities and Injuries by Contributing Factor
 
 ```{r echo=FALSE}
@@ -694,11 +694,10 @@ ggplot(data = filtered_data) +
   labs(title = "Number of People Injured or Killed in Crashes Caused by Top Factors",
        y = "Number of People Injured or Killed",
        x = "Contributing Factors")
+
 ```
 
 The jitter plot shows the number of people injured or killed in crashes caused by the top 5 factors. The plot shows that the most common contributing factors to crashes are also correlated with more violent crashes. Driver inattention or distraction caused the most violent crashes. This plot gives more insight into how different contributing factors of crashes relate to injuries and deaths.
-
-\pagebreak
 
 ### Bubble Plot Between Contributing Factor and Vehicle Type
 
@@ -734,7 +733,15 @@ ggplot(bubble_data, aes(x = Contributing_Factor_Category,
 
 The bubble plot shows the relationship between contributing factors and vehicle types in car crashes. The relative sizing of the bubbles are indicative of which contributing factors, in combination with the type of vehicle involved, result in the most crashes. The plot shows that the most common contributing factors are related broadly to driver behavior, and the most common vehicle types involved in crashes are passenger vehicles. A working hypothesis for why this is the case is that passenger vehicles are the most common type of vehicle on the road and previous analysis has shown that driver inattention/distraction is the most common contributing factor to crashes. Additionally, the insights gained from the time analysis showed clusters of crashes during rush hours. Holistically, it is not hard to envision the scenario in which commuters are in a rush to get to work or home, and are not paying attention to the road, resulting in crashes.
 
-\pagebreak
+### Killer Plot Example
+
+```{r echo=FALSE, fig.width=10, fig.height=6, fig.align='center'}
+
+knitr::include_graphics("figures/killer_plot.png")
+
+```
+
+The example illustrates the type of insights that can be gained from the analysis of our "killer plot" and its various settings. The example shows in 2016 in Manhattan, the greatest peaks in car crashes occurred from factors related to "Traffic Control," namely during the hours of 12:00PM and 7:00 - 8:00PM. This could be due to the high volume of traffic in Manhattan during these hours. Also evident is the peak in crashes caused by "Road/Environmental Conditions" at 1:00 PM and 12:00 AM. The "softmax temperature" setting of 52/100 was used to accentuate the peaks by making the crash distributions less uniform by running the relative frequencies through the softmax function we have defined on the server logic of our Shiny app.
 
 ### Key Findings From the Exploratory Data Analysis
 
@@ -754,7 +761,7 @@ The bubble plot shows the relationship between contributing factors and vehicle 
 
 ### Decision Tree
 
-```{r echo=FALSE}
+```{r echo=FALSE, cache=TRUE}
 
 # Merge the two data sets on the common key COLLISION_ID
 people_crashes_merged <- sqldf('SELECT * FROM cleaned_crashes_data cd
@@ -763,7 +770,7 @@ people_crashes_merged <- sqldf('SELECT * FROM cleaned_crashes_data cd
 
 ```
 
-```{r echo=FALSE, fig.width=12, fig.height=10}
+```{r echo=FALSE, fig.width=12, fig.height=10, cache=TRUE}
 
 # Prepare the data for modeling
 dt_model_data <- people_crashes_merged %>%
@@ -796,6 +803,7 @@ predictions <- predict(tree_model, dt_test_data)
 # # Calculate MAE and RMSE
 errors <- data.frame(MAE = mean(abs(predictions - dt_test_data$NUMBER.OF.PERSONS.KILLED)),
                      RMSE = sqrt(mean((predictions - dt_test_data$NUMBER.OF.PERSONS.KILLED)^2)))
+
 kable(errors, caption = "Model Performance Metrics")
 
 ```
@@ -823,11 +831,9 @@ Understanding the hyper parameters of the decision tree and the rationale behind
 
 In this case, the decision tree model was trained to predict the number of people killed in car crashes based on the following features: BOROUGH, PERSON_TYPE, CRASH.TIME, and PERSON_AGE. The model was trained on 70% of the data and tested on the remaining 30%. The model achieved a Mean Absolute Error (MAE) of 0.003833112 and a Root Mean Squared Error (RMSE) of 0.05435656. The decision tree model is visualized above. The model is quite complex and difficult to interpret, but it is able to predict the number of people killed in car crashes with a high degree of accuracy. Most likely the model is overfitting, and the complexity of the model is not necessary for the task at hand. However, the model is a good starting point for predicting the number of people killed in car crashes.
 
-\pagebreak
-
 ### Statistical Modeling with Generalized Linear Model
 
-```{r echo=FALSE}
+```{r echo=FALSE, cache=TRUE}
 
 # Prepare the data for modeling
 
@@ -855,7 +861,7 @@ crash_vehicle_merged <- merge(data_crash_cleaned, data_vehicle_cleaned,
 final_merged_dataset <- merge(crash_vehicle_merged, data_person_cleaned, 
                               by = "COLLISION_ID")
 
-# # Handle missing values
+# Handle missing values
 final_merged_dataset <- sqldf('SELECT * FROM final_merged_dataset fmd
                                WHERE
                                  fmd.BOROUGH IS NOT NULL AND 
@@ -876,7 +882,7 @@ final_merged_dataset <- sqldf('SELECT * FROM final_merged_dataset fmd
 
 ```
 
-```{r echo=FALSE, results='asis'}
+```{r echo=FALSE, cache=TRUE}
 
 # transmutate CRASH.TIME to 4-hour intervals to reduce the number of levels
 glm_data <- final_merged_dataset %>%
@@ -918,9 +924,11 @@ glm_model <- glm(NUMBER.OF.PERSONS.INJURED + NUMBER.OF.PERSONS.KILLED ~
                    CRASH.TIME + BOROUGH + DRIVER_SEX + PERSON_AGE + CRASH.DATE,
                  data = subsampled_data,
                  family = poisson)
+```
 
+```{r echo=FALSE, results='asis'}
 
-# Display the summary of the fitted model
+# Display the summary of the fitted model and save it as an HTML file
 tab_model(glm_model)
 
 ```
@@ -930,8 +938,6 @@ Generalized Linear Models (GLMs) are an extension of traditional linear regressi
 The generalized linear model was trained to predict the number of people injured or killed in car crashes based on the following features: CRASH.TIME, BOROUGH, DRIVER_SEX, PERSON_AGE, and CRASH.DATE. The model was trained on a subsample of 10,000 rows of the data in order to speed up the model fitting process. The fitted GLM (whose results are shown above) provides a summary of the model's coefficients, standard errors, z-values, and p-values. The coefficients represent the estimated effect of each predictor variable on the response variable, while the p-values indicate the statistical significance of these effects. The results indicate that the time of day, borough, driver's sex, the person's age group, and the day of the week significantly influence the likelihood of injuries or fatalities. For instance, evening times and late nights have higher associated counts of injuries or fatalities compared to other times of the day, highlighting riskier periods for road users. Manhattan, compared to other boroughs, shows a significantly lower count, suggesting geographical differences in traffic safety or reporting practices. Additionally, the model reveals the older age groups (55-64, 65+) have a lower likelihood of being involved in injurious or fatal crashes compared to younger age groups. The day of the week also plays a role, with Thursday showing a higher likelihood of crashes compared to other days, suggesting possible variations in traffic patterns or behaviors.
 
 It is important to note, however, that while GLM provides valuable insights, it is based on associations and does not imply causation. The model's assumptions, including the independence of events and the suitability of the Poisson distribution for this data, should be carefully considered when interpreting the results and planning interventions.
-
-\pagebreak
 
 ## Conclusion
 
@@ -948,11 +954,3 @@ As it stands, some key findings from our analysis can be summarized as follows i
 \- Fatal crashes are prominent during the evening and the night, when darkness causes reduced visibility.
 
 \- The top 5 contributing factors to car crashes have been decreasing since 2020, which could be due to the COVID-19 pandemic and stay-at-home orders. The lasting impact of the pandemic on traffic safety remains to be seen.
-
-
-```{r, include=FALSE}
-
-## Optional: Run the Shiny app
-# runApp(appDir = "../app") # NOTE: path is relative to this file
-
-```
