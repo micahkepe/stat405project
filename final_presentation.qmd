@@ -1,0 +1,41 @@
+---
+title: "NYC Car Crash Analysis"
+subtitle: "Final Project Presentation"
+author: "Kevin Lei, Micah Kepe, Zachary Kepe, Giulia Costantini"
+format:
+  revealjs: 
+    # embed-resources: true
+    slide-number: true
+    chalkboard: 
+      buttons: false
+    preview-links: auto
+    css: styles.css
+    footer: STAT 405 Group 3 - Micah Kepe, Kevin Lei, Zachary Kepe, Giulia Costantini 
+server: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(shiny)
+library(htmltools)
+
+```
+
+
+## Introduction
+
+- **Objective**: To analyze the car crash data in NYC from 2012 to 2024.
+- **Data Description**: The data set contains information about the car crashes in NYC from 2012 to 2024. It includes the date, time, location, and the number of people injured or killed in each crash.
+  
+## Key Findings
+
+
+## Temporal Analysis Plotting
+
+
+## Killer Plot
+
+<iframe src="https://micahkepe.shinyapps.io/NYC-Crashes/" width="100%" height="1000px"></iframe>
+
+## Conclusion

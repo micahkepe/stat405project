@@ -26,7 +26,7 @@ ui <- fluidPage(
   titlePanel("NYC Car Crash Analysis"),
   sidebarLayout(
     sidebarPanel(
-      checkboxGroupInput("factors", "Select contributing factors to include:",
+      checkboxGroupInput("factors", "Select contributing factor category to include:",
                          choices = NULL),
       selectInput("borough", "Select a borough:",
                   choices = NULL,
