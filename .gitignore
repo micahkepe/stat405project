@@ -66,4 +66,7 @@ rsconnect/
 # Data (contributors should populate from Dropbox link)
 data/
 
+# reveal js presentation generated files
+*.html
+
 
