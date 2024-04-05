@@ -737,7 +737,7 @@ The bubble plot shows the relationship between contributing factors and vehicle 
 
 ```{r echo=FALSE, fig.width=10, fig.height=6, fig.align='center'}
 
-knitr::include_graphics("figures/killer_plot.png")
+knitr::include_graphics("figures/killer-plot.png")
 
 ```
 
