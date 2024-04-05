@@ -32,8 +32,7 @@ library(DBI)
 library(RSQLite)
 library(sqldf)
 library(kableExtra)
-
-# TODO: Load the data
+library(htmltools)
 
 ```
 
@@ -47,14 +46,6 @@ library(kableExtra)
   - Identify trends and patterns
   - Provide insights for improving road safety
 
-## Data Cleaning {.smaller auto-animate="true"}
-
-- Removed rows with missing or invalid values
-- Converted date and time columns to standard formats
-- Replaced empty strings with "UNKNOWN" for street names
-- Dropped redundant location column
-- Removed remaining rows with NA values
-
 ## Key Findings {.smaller auto-animate="true"}
 
 - Brooklyn has the highest percentage of crashes per capita
@@ -66,15 +57,12 @@ library(kableExtra)
 
 ## Crash Percentage by Borough {auto-animate="true"}
 
-```{r}
-# Insert code
-```
+<img src="./reports/figures/percentage-by-borough.png">
+
 
 ## Crash Density Heatmap {auto-animate="true"}
 
-```{r}
-# Insert code
-```
+<img src="./reports/figures/landmarks-density-map.png">
 
 ## Crashes by Time of Day {auto-animate="true"}
 
@@ -99,6 +87,12 @@ library(kableExtra)
 <iframe src="https://micahkepe.shinyapps.io/NYC-Crashes/" width="100%" height="650px"></iframe>
 
 ## Predictive Modeling {.smaller auto-animate="true"}
+
+```{r}
+
+# Insert code
+
+```
 
 ## Conclusion {.smaller auto-animate="true"}
 
