@@ -347,7 +347,7 @@ An important caveat for this graphic is that the population counts used to deter
 
 ### Density of Car Crashes in NYC
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.align='center'}
 
 # Define famous landmarks in NYC
 landmarks <- data.frame(
@@ -488,7 +488,7 @@ The scatter plot of the top 3 contributing factors by time of day show how the t
 
 ### Temporal Density Maps
 
-```{r echo=FALSE, fig.width=10, fig.height=8}
+```{r echo=FALSE, fig.width=8, fig.align='center'}
 
 # Start with the cleaned data
 analysis_data <- cleaned_crashes_data
@@ -534,7 +534,7 @@ The temporal density map shows the frequency of car crashes by day of the week a
 
 The most damaging car crashes are of course those that result in loss of life. Since one of the primary goals of our analysis is to examine potential trends that result in fatal car crashes, we pose the following question: When are fatal car crashes more likely to occur?
 
-```{r echo=FALSE, fig.width=10, fig.height=8}
+```{r echo=FALSE, fig.width=8, fig.align='center'}
 
 # Start with the cleaned data
 analysis_data <- sqldf('SELECT * FROM cleaned_crashes_data 
@@ -701,7 +701,7 @@ The jitter plot shows the number of people injured or killed in crashes caused b
 
 ### Bubble Plot Between Contributing Factor and Vehicle Type
 
-```{r echo=FALSE, fig.width=10, fig.height=6}
+```{r echo=FALSE, fig.width=10, fig.height=6, fig.align='center'}
 
 # Fetch the data for the bubble plot
 bubble_data <- cleaned_crashes_data %>%
@@ -795,7 +795,7 @@ tree_model <- rpart(NUMBER.OF.PERSONS.KILLED ~ .,
 
 ```
 
-```{r, echo=FALSE, results='asis'}
+```{r, echo=FALSE, results='asis', fig.align='center'}
 
 # Make predictions on the test set
 predictions <- predict(tree_model, dt_test_data)
@@ -808,7 +808,7 @@ kable(errors, caption = "Model Performance Metrics")
 
 ```
 
-```{r echo=FALSE, warning=FALSE}
+```{r echo=FALSE, warning=FALSE, fig.align='center'}
 
 # Visualize the decision tree (adjust to make more readable)
 rpart.plot(tree_model,
