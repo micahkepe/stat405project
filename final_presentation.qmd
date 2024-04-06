@@ -1,7 +1,7 @@
 ---
 title: "NYC Car Crash Analysis"
 subtitle: "Final Project Presentation"
-author: "Kevin Lei, Micah Kepe, Zachary Kepe, Giulia Costantini"
+author: "Micah Kepe, Kevin Lei, Zachary Kepe, Giulia Costantini"
 format:
   revealjs:
     slide-number: true
@@ -16,131 +16,268 @@ server: shiny
 knitr::opts_chunk$set(echo = FALSE)
 
 # Load required packages
-library(reshape2)
-library(tidyverse)
-library(lubridate)
-library(ggplot2)
-library(plotly)
-library(chron)
-library(reshape2)
-library(RColorBrewer)
-library(scales)
-library(rpart)
-library(rpart.plot)
-library(sjPlot)
-library(DBI)
-library(RSQLite)
-library(sqldf)
-library(kableExtra)
 library(htmltools)
+library(revealjs)
 
 ```
 
-## Introduction {.smaller auto-animate="true"}
+## Introduction {auto-animate="true"}
 
-- **Objective**: Analyze car crash data in NYC from 2012 to 2024
-- **Data Description**: 
-  - Date, time, location of crashes
-  - Number of people injured or killed in each crash
-- **Motivation**:
-  - Identify trends and patterns
-  - Provide insights for improving road safety
+::: incremental
+-   **Objective**: Analyze car crash data in NYC from 2012 to 2024
 
-## Key Findings {.smaller auto-animate="true"}
+-   **Data Description**:
 
-- Brooklyn has the highest percentage of crashes per capita
-- Crash density is highest in central areas with heavy traffic
-- Crashes peak during evening rush hours
-- Driver inattention/distraction is the leading cause of crashes
-- Fatal crashes are more prominent during evening and night
-- Top 5 contributing factors have been decreasing since 2020
+    -   Date, time, location of crashes, factors contributing to crashes, and vehicle types involved
+    -   Number of people injured or killed in each crash
 
-## Crash Percentage by Borough {auto-animate="true"}
+-   **Significance**: Over 42,900 deaths and \$340 billion in economic costs annually in the U.S.
 
-<img src="./reports/figures/percentage-by-borough.png">
+-   **Comprehensiveness**: Over 2 million records detailing location, individuals affected, and more.
+:::
 
+## Data Cleaning and Preprocessing {auto-animate="true"}
 
-## Crash Density Heatmap {auto-animate="true"}
+We refined our dataset to ensure accuracy, resulting in 1,382,320 observations for analysis from an original \~2.1 million observations. This involved:
 
-<img src="./reports/figures/landmarks-density-map.png">
+::: incremental
+-   Removing rows with missing values in critical columns.
+-   Standardizing formats for date and time.
+-   Categorizing contributing factors and vehicle types for better analysis.
+-   Removing columns with redundant information to maintain "tidy" data.
+:::
 
+## Leveraging Additional NYC OpenData Datasets {.smaller auto-animate="true"}
 
-## Pie Chart of Contributing Factors {auto-animate="true"}
+::: columns
+::: {.column width="65%"}
+<img src="./reports/figures/data-diagram.jpg" width="100%"/>
+:::
 
-<img src="./reports/figures/pie-chart.png">
+::: {.column width="35%"}
+::: {.fragment .fade-in}
+-   We integrated additional NYC OpenData datasets, providing greater granularity and context to each of the observations.
+-   More information on the persons and vehicles involved in each crash
+-   Each interconnect via the collision ID as the foreign key
+:::
+:::
+:::
 
+## Exploratory Data Analysis {auto-animate="true"}
 
-## Historgram of Car Crashes by Time of Day {auto-animate="true"}
+::: incremental
+-   With our cleaned dataset, we conducted exploratory data analysis to uncover insights and trends in car crashes in NYC.
+-   Our mission was to identify patterns, contributing factors, and temporal trends to inform data-driven interventions.
+-   These insights not only allowed us to be better informed but also to develop predictive models to forecast future crash outcomes.
+:::
 
-<img src="./reports/figures/histogram-freq-time-of-day.png">
+## Crash Percentage by Borough {.smaller auto-animate="true"}
 
+<img src="./reports/figures/percentage-by-borough.png"/>
 
-## Line Plot of Contributing Factors {auto-animate="true"}
+::: {.fragment .fade-in}
+-   The frequency of crashes varies significantly across boroughs, with Brooklyn experiencing the highest number of crashes per capita. This insight is crucial for targeting interventions.
+:::
 
-<img src="./reports/figures/lineplot-factors-by-hour.png">
+## Crash Density Heatmap {.smaller auto-animate="true"}
 
+<img src="./reports/figures/landmarks-density-map.png"/>
+
+::: {.fragment .fade-in}
+-   Our heatmap reveals that central NYC, particularly areas with heavy traffic and major landmarks, has the highest density of car crashes. This suggests the need for specific traffic management strategies in these areas.
+:::
+
+## Pie Chart of Contributing Factors {.smaller auto-animate="true"}
+
+<img src="./reports/figures/pie-chart.png" width="100%"/>
+
+::: {.fragment .fade-in}
+-   Nearly 53% of specified crashes are due to Driver Inattention/Distraction, underscoring the critical importance of driver awareness programs.
+:::
+
+## Histogram of Car Crashes by Time of Day {.smaller auto-animate="true"}
+
+<img src="./reports/figures/histogram-freq-time-of-day.png"/>
+
+::: incremental
+-   During the middle of the day, there is an elevated frequency of crashes, peaking during the evening rush hours.
+-   What are the contributing factors to these crashes?
+:::
+
+## Line Plot of Contributing Factors {.smaller auto-animate="true"}
+
+<img src="./reports/figures/lineplot-factors-by-hour.png"/>
+
+::: {.fragment .fade-in}
+-   By far the largest contributing factor to crashes is Driver Inattention/Distraction.
+:::
 
 ## Temporal Density Plots {auto-animate="true"}
-- The following plots show the temporal distribution of crashes and fatalities over the years
 
-## **1. Crashes by Day of Week and Hour of Day**
-<img src="./reports/figures/heatmap-crashes-day-and-hour.png">
+-   Prior bias made us believe that most crashes occurred during the early morning hours when people could be returning from bars and events.
 
-## **2. Fatal Crashes by Day of Week and Hour of Day**
-<img src="./reports/figures/fatal-crashes-day-and-hour.png">
+::: incremental
+-   However ... <br/>
+-   Our analysis revealed a different story.
+:::
 
-## **3. Fatal Crashes by Hour of Day**
-<img src="./reports/figures/fatal-crashes-by-hour.png">
+::: {.fragment .fade-in}
+-   The following plots provide insights into the temporal distribution of crashes along several time dimensions, each revealing unique patterns and trends.
+:::
 
+## **1. Crashes by Day of Week and Hour of Day** {.smaller auto-animate="true"}
+
+::: columns
+::: {.column width="60%"}
+<img src="./reports/figures/heatmap-crashes-day-and-hour.png"/>
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="38%"}
+::: {.fragment .fade-in}
+-   The heatmap illustrates the distribution of crashes by day of the week and hour of the day, with darker shades indicating higher crash frequencies.
+-   Clearly a clustering of crashes during the weekdays, with a slight decrease on weekends.
+-   Within the weekdays, the evening rush hours are the most dangerous (8:00-9:00 AM and 4:00-6:00 PM)
+:::
+:::
+:::
+
+## **2. Fatal Crashes by Day of Week and Hour of Day** {.smaller auto-animate="true"}
+
+::: columns
+::: {.column width="60%"}
+<img src="./reports/figures/fatal-crashes-day-and-hour.png"/>
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="38%"}
+::: {.fragment .fade-in}
+-   When only considering fatal crashes, the heatmap shows sporadic patterns, which differs from the overall crash distribution.
+-   Fatal crashes are more evenly distributed across the week, with a slight increase on weekends.
+:::
+:::
+:::
+
+## **3. Fatal Crashes by Hour of Day** {.smaller auto-animate="true"}
+
+<img src="./reports/figures/fatal-crashes-by-hour.png"/>
+
+::: {.fragment .fade-in}
+-   Reducing the time dimension to just the hour of the day, we see that fatal crashes are more prominent during the evening and night hours.
+-   This insight can inform targeted interventions during these high-risk periods.
+:::
+
+## Additional Visualizations {auto-animate="true"}
+
+-   These visualizations provide further insights into the contributing factors and vehicle types involved in car crashes.
 
 ## Stack Area Plot of Contributing Factors Over Time {auto-animate="true"}
 
-<img src="./reports/figures/stacked-area-plot.png">
-
+<img src="./reports/figures/stacked-area-plot.png"/>
 
 ## Jitter Plot of Fatalities and Injuries by Contributing Factors {auto-animate="true"}
 
-<img src="./reports/figures/jitter-plot.png">
-
+<img src="./reports/figures/jitter-plot.png"/>
 
 ## Bubble Plot Between Contributing Factors and Vehicle Type {auto-animate="true"}
 
-<img src="./reports/figures/bubble-plot.png">
+<img src="./reports/figures/bubble-plot.png"/>
 
+## Killer Plot {.smaller auto-animate="true"}
 
-## Killer Plot {auto-animate="true"}
+<iframe src="https://micahkepe.shinyapps.io/NYC-Crashes/" width="100%" height="650px">
 
-<iframe src="https://micahkepe.shinyapps.io/NYC-Crashes/" width="100%" height="650px"></iframe>
+</iframe>
 
-## Predictive Modeling {.smaller auto-animate="true"}
+## Key Findings from Exploratory Analysis {.smaller auto-animate="true"}
 
-- Based on the data, we performed two types of predictive modeling:
-  1. Decision Tree
-  2. Generalized Linear Model (GLM)
+::: incremental
+-   ***Temporal patterns***: Crashes are more frequent during the middle of the day and evening rush hours, with fatal crashes more prevalent during the evening and night hours.
+-   ***Contributing factors***: Driver Inattention/Distraction is the leading cause of crashes, emphasizing the need for driver awareness programs.
+-   ***Borough disparities***: Brooklyn has the highest crash frequency per capita, highlighting the need for targeted interventions in high-risk areas.
+-   ***Potential interference effect of COVID-19***: The stacked area plot shows a significant decrease in crashes during the pandemic, suggesting the impact of external factors on crash occurrences with stay-at-home orders.
+:::
 
+## Predictive Modeling {auto-animate="true"}
+
+-   Based on the data, we performed two types of predictive modeling:
+
+::: incremental
+1.  Decision Tree
+2.  Generalized Linear Model (GLM)
+:::
+
+## Background on Models {.smaller auto-animate="true"}
+
+::: incremental
+-   **Decision Tree**: A tree-like model that predicts the value of a target variable based on several input variables. Following a set of rules, the model splits the data into subsets based on the input variables. The resulting tree structure helps identify the most important predictors of the target variable (in our case, fatalities in car crashes).
+
+<br/>
+
+-   **Generalized Linear Model (GLM)**: A flexible generalization of ordinary linear regression that allows for non-normal error distributions. GLMs are used to model the relationship between a response variable and one or more explanatory variables. In our analysis, we used a GLM to predict the likelihood of fatalities in car crashes based on various factors, assuming a Poisson distribution.
+:::
 
 ## Decision Tree {.smaller auto-animate="true"}
 
-<img src= "./reports/figures/decision-tree-results.png">
+::: columns
+::: {.column width="70%"}
+<img src="./reports/figures/decision-tree-results.png"/>
+:::
 
+::: {.column width="30%"}
+::: incremental
+-  The model's interpretability makes it a valuable tool for identifying high-risk groups and developing targeted interventions.
+- Tendency to overfit the data as the max depth increases, which led us explore a GLM model as an alternative approach.
+:::
+:::
+
+:::
 
 ## Generalized Linear Model {.smaller auto-animate="true"}
 
-<img src= "./reports/figures/glm-model-summary.png">
-
-
-## Conclusion {.smaller auto-animate="true"}
-- TODO: Add conclusion
-
-## Thank You! {.smaller auto-animate="true"}
-
-Any questions?
-
-:::footer
-Source code available at [GitHub](https://github.com/micahkepe/stat405project)
+::: columns
+::: {.column width="40%"}
+<img src="./reports/figures/glm-model-summary.png" width="80%"/>
 :::
 
+::: {.column width="60%"}
+::: incremental
+-   The GLM highlights the influence of various factors on crash outcomes, with time of day, borough, and driver's sex among the significant predictors.
+-   The coefficients represent the estimated effect of each
+predictor variable on the response variable, while the p-values indicate the statistical significance of these
+effects.
+-   An important caveat is that the model assumes a Poisson distribution for the response variable, fatalities. 
+- This assumption is convenient for count data but may fail to capture the true distribution of fatalities in car crashes.
+:::
+:::
 
+:::
 
+## Insights from the GLM {auto-animate="true"}
+::: incremental
+- Evening times and late nights have higher associated counts of injuries or fatalities compared to other times of the day
+- Manhattan, compared to other boroughs, shows a significantly
+lower count, suggesting geographical differences in traffic safety or reporting practices. 
+- Older age groups (55-64, 65+) have a lower likelihood of being involved in injurious or fatal crashes compared to younger age groups. 
+:::
 
+## Conclusion {auto-animate="true"}
 
+::: incremental
+-   Our analysis highlights the importance and practical utility of data-driven interventions to enhance road safety.
+-   Future efforts should focus on refining predictive models and exploring the impact of external factors on crash occurrences.
+-   By leveraging the insights from our analysis, policymakers, law enforcement agencies, and other stakeholders can develop targeted strategies to reduce the frequency and severity of car crashes in NYC.
+:::
+
+## Thank You! {auto-animate="true"}
+:::{.fragment .fade-in}
+<br/>*Any questions?*
+:::
+
+::: footer
+Source code available on [GitHub](https://github.com/micahkepe/stat405project)
+:::
