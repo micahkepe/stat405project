@@ -1,14 +1,5 @@
 # NYC Crash Data Analysis
 
-## Table of Contents
-- [Prequisites](#prerequisites)
-- [Data Setup](#data-setup)
-- [About the Data](#about-the-data)
-- [Data Analyses](#data-analyses)
-- [Live Demo of the Shiny App](#live-demo-of-the-shiny-app)
-- [Running the Shiny App Locally (Optional)](#running-the-shiny-app-locally-optional)
-- [Contributors](#contributors)
-
 ## Prerequisites
 
 To run the code in this repository, you will need to have the following installed:
