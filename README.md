@@ -6,7 +6,7 @@ To run the code in this repository, you will need to have the following installe
 
 -   RStudio
 -   R
--   git
+-   pdflatex (for rendering the `.pdf` files)
 
 ## Data Setup
 
