@@ -64,23 +64,49 @@ library(htmltools)
 
 <img src="./reports/figures/landmarks-density-map.png">
 
-## Crashes by Time of Day {auto-animate="true"}
 
-```{r}
-# Insert code
-```
+## Pie Chart of Contributing Factors {auto-animate="true"}
 
-## Contributing Factors {auto-animate="true"}
+<img src="./reports/figures/pie-chart.png">
 
-```{r}
-# Insert code
-```
 
-## Trends of Contributing Factors {auto-animate="true"}
+## Historgram of Car Crashes by Time of Day {auto-animate="true"}
 
-```{r}
-# Insert code
-```
+<img src="./reports/figures/histogram-freq-time-of-day.png">
+
+
+## Line Plot of Contributing Factors {auto-animate="true"}
+
+<img src="./reports/figures/lineplot-factors-by-hour.png">
+
+
+## Temporal Density Plots {auto-animate="true"}
+- The following plots show the temporal distribution of crashes and fatalities over the years
+
+## **1. Crashes by Day of Week and Hour of Day**
+<img src="./reports/figures/heatmap-crashes-day-and-hour.png">
+
+## **2. Fatal Crashes by Day of Week and Hour of Day**
+<img src="./reports/figures/fatal-crashes-day-and-hour.png">
+
+## **3. Fatal Crashes by Hour of Day**
+<img src="./reports/figures/fatal-crashes-by-hour.png">
+
+
+## Stack Area Plot of Contributing Factors Over Time {auto-animate="true"}
+
+<img src="./reports/figures/stacked-area-plot.png">
+
+
+## Jitter Plot of Fatalities and Injuries by Contributing Factors {auto-animate="true"}
+
+<img src="./reports/figures/jitter-plot.png">
+
+
+## Bubble Plot Between Contributing Factors and Vehicle Type {auto-animate="true"}
+
+<img src="./reports/figures/bubble-plot.png">
+
 
 ## Killer Plot {auto-animate="true"}
 
@@ -88,19 +114,23 @@ library(htmltools)
 
 ## Predictive Modeling {.smaller auto-animate="true"}
 
-```{r}
+- Based on the data, we performed two types of predictive modeling:
+  1. Decision Tree
+  2. Generalized Linear Model (GLM)
 
-# Insert code
 
-```
+## Decision Tree {.smaller auto-animate="true"}
+
+<img src= "./reports/figures/decision-tree-results.png">
+
+
+## Generalized Linear Model {.smaller auto-animate="true"}
+
+<img src= "./reports/figures/glm-model-summary.png">
+
 
 ## Conclusion {.smaller auto-animate="true"}
-
-- Identified patterns and insights into car crashes in NYC
-- Evening rush hours and driver inattention are major risk factors
-- Geography and time of day play significant roles
-- COVID-19 pandemic has impacted crash trends
-- Findings can inform targeted interventions and policies for improving road safety
+- TODO: Add conclusion
 
 ## Thank You! {.smaller auto-animate="true"}
 
