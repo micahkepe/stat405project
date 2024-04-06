@@ -1,6 +1,13 @@
 # NYC Crash Data Analysis
 
-Check out the demo of our Shiny app [here](https://micahkepe.shinyapps.io/NYC-Crashes/).
+## Table of Contents
+- [Prequisites](#prerequisites)
+- [Data Setup](#data-setup)
+- [About the Data](#about-the-data)
+- [Data Analyses](#data-analyses)
+- [Live Demo of the Shiny App](#live-demo-of-the-shiny-app)
+- [Running the Shiny App Locally (Optional)](#running-the-shiny-app-locally-optional)
+- [Contributors](#contributors)
 
 ## Prerequisites
 
@@ -37,6 +44,9 @@ For a more detailed breakdown of the data sets used and how they relate, please 
 ## Data Analyses
 
 To see our incremental data analysis, please see the `reports` folder. This folder contains both the `.qmd` files and their corresponding `.pdf` files of each of our report iterations.
+
+## Live Demo of the Shiny App
+- Check out the demo of our Shiny app [here](https://micahkepe.shinyapps.io/NYC-Crashes/).
 
 ## Running the Shiny App Locally (Optional)
 
