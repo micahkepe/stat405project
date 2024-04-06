@@ -20,6 +20,7 @@ library(RSQLite)
 library(sqldf)
 library(dplyr)
 library(ggplot2)
+library(grid)
 
 # Define UI for the app based on the description above
 ui <- fluidPage(
@@ -82,64 +83,93 @@ server <- function(input, output, session) {
       ", paste(input$factors, collapse = "', '"), input$borough, input$year))
     }
     
-    # Prepare data for the plot
-    data_summary <- data_filtered %>%
-      mutate(
-        CRASH.HOUR = as.integer(substr(CRASH.TIME, 1, 2)),
-        CRASH.MINUTE = as.integer(substr(CRASH.TIME, 4, 5)),
-        CRASH.TIME_DECIMAL = CRASH.HOUR + CRASH.MINUTE / 60,
-        CRASH.AMPM = ifelse(CRASH.HOUR < 12, "AM", "PM")
-      ) %>%
-      group_by(Contributing_Factor_Category, CRASH.TIME_DECIMAL, CRASH.AMPM) %>%
-      summarize(count = n(), .groups = "drop") %>%
-      ungroup()
-    
-    # Calculate relative frequency for each contributing factor
-    data_summary <- data_summary %>%
-      group_by(Contributing_Factor_Category) %>%
-      mutate(relative_freq = count / sum(count)) %>%
-      ungroup()
-    
-    # Apply softmax function with temperature to the relative frequency
-    data_summary <- data_summary %>%
-      group_by(Contributing_Factor_Category) %>%
-      mutate(softmax_freq = exp(relative_freq * input$temperature) / sum(exp(relative_freq * input$temperature))) %>%
-      ungroup()
-    
-    # Calculate average frequency for each contributing factor
-    avg_freq <- data_summary %>%
-      group_by(Contributing_Factor_Category) %>%
-      summarize(avg_freq = mean(softmax_freq))
-    
-    # Merge average frequency with data summary
-    data_summary <- data_summary %>%
-      left_join(avg_freq, by = "Contributing_Factor_Category")
-    
     # Create the plot with separate graphs for each contributing factor
-    ggplot(data_summary, aes(x = CRASH.TIME_DECIMAL, y = softmax_freq, color = CRASH.AMPM, group = CRASH.AMPM)) +
-      geom_line(linewidth = 1) +
-      geom_line(aes(y = avg_freq), linetype = "dashed", color = "black", size = 0.5) +
-      facet_wrap(~ Contributing_Factor_Category, ncol = 2) +
-      coord_polar() +
-      scale_x_continuous(
-        breaks = 0:23,
-        labels = function(x) paste0(sprintf("%02d", x), ":00"),
-        limits = c(0, 24)
-      ) +
-      scale_y_continuous(labels = scales::percent_format()) +
-      labs(x = "Hour of the Day", color = "AM/PM") +
-      labs(y = "Relative Frequency") +
-      theme_minimal() +
-      theme(
-        plot.title = element_text(hjust = 0.5),
-        strip.text = element_text(size = 12, face = "bold"),
-        panel.spacing = unit(1, "lines"),
-        aspect.ratio = 1,
-        legend.position = "right"
-      ) +
-      guides(color = guide_legend(title.position = "top", title.hjust = 0.5)) +
-      ggtitle("Car Crashes by Contributing Factor and Time of Day") +
-      labs(linetype = "Average Frequency")
+    plot_grid <- function(data_summary) {
+      p <- ggplot(data_summary, aes(x = CRASH.TIME_DECIMAL, y = softmax_freq, color = CRASH.AMPM, group = CRASH.AMPM)) +
+        geom_line(linewidth = 1) +
+        geom_line(aes(y = avg_freq), linetype = "dashed", color = "black", size = 0.5) +
+        coord_polar() +
+        scale_x_continuous(
+          breaks = 0:23,
+          labels = function(x) paste0(sprintf("%02d", x), ":00"),
+          limits = c(0, 24)
+        ) +
+        scale_y_continuous(labels = scales::percent_format()) +
+        labs(x = "Hour of the Day", color = "AM/PM") +
+        labs(y = "Relative Frequency") +
+        theme_minimal() +
+        theme(
+          plot.title = element_text(hjust = 0.5),
+          strip.text = element_text(size = 12, face = "bold"),
+          panel.spacing = unit(1, "lines"),
+          aspect.ratio = 1,
+          legend.position = "right"
+        ) +
+        guides(color = guide_legend(title.position = "top", title.hjust = 0.5)) +
+        ggtitle("Car Crashes by Contributing Factor and Time of Day") +
+        labs(linetype = "Average Frequency")
+      
+      p + facet_wrap(~ Contributing_Factor_Category, ncol = 2)
+    }
+    
+    output$killerPlot <- renderPlot({
+      # Filter data based on user inputs
+      if (input$borough == "All Boroughs") {
+        data_filtered <- dbGetQuery(app_con, sprintf("
+      SELECT Contributing_Factor_Category, [CRASH.DATE], [CRASH.TIME], BOROUGH
+      FROM app_data
+      WHERE Contributing_Factor_Category IN ('%s')
+        AND strftime('%%Y', [CRASH.DATE]) = '%s'
+    ", paste(input$factors, collapse = "', '"), input$year))
+      } else {
+        data_filtered <- dbGetQuery(app_con, sprintf("
+      SELECT Contributing_Factor_Category, [CRASH.DATE], [CRASH.TIME], BOROUGH
+      FROM app_data
+      WHERE Contributing_Factor_Category IN ('%s')
+        AND BOROUGH = '%s'
+        AND strftime('%%Y', [CRASH.DATE]) = '%s'
+    ", paste(input$factors, collapse = "', '"), input$borough, input$year))
+      }
+      
+      # Prepare data for the plot
+      data_summary <- data_filtered %>%
+        mutate(
+          CRASH.HOUR = as.integer(substr(CRASH.TIME, 1, 2)),
+          CRASH.MINUTE = as.integer(substr(CRASH.TIME, 4, 5)),
+          CRASH.TIME_DECIMAL = CRASH.HOUR + CRASH.MINUTE / 60,
+          CRASH.AMPM = ifelse(CRASH.HOUR < 12, "AM", "PM")
+        ) %>%
+        group_by(Contributing_Factor_Category, CRASH.TIME_DECIMAL, CRASH.AMPM) %>%
+        summarize(count = n(), .groups = "drop") %>%
+        ungroup()
+      
+      # Calculate relative frequency for each contributing factor
+      data_summary <- data_summary %>%
+        group_by(Contributing_Factor_Category) %>%
+        mutate(relative_freq = count / sum(count)) %>%
+        ungroup()
+      
+      # Apply softmax function with temperature to the relative frequency
+      data_summary <- data_summary %>%
+        group_by(Contributing_Factor_Category) %>%
+        mutate(softmax_freq = exp(relative_freq * input$temperature) / sum(exp(relative_freq * input$temperature))) %>%
+        ungroup()
+      
+      # Calculate average frequency for each contributing factor
+      avg_freq <- data_summary %>%
+        group_by(Contributing_Factor_Category) %>%
+        summarize(avg_freq = mean(softmax_freq))
+      
+      # Merge average frequency with data summary
+      data_summary <- data_summary %>%
+        left_join(avg_freq, by = "Contributing_Factor_Category")
+      
+      # Create the plot using the grid library
+      grid.newpage()
+      pushViewport(viewport(layout = grid.layout(1, 1)))
+      print(plot_grid(data_summary), vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
+      popViewport()
+    }, height = 800)
   }, height = 800)
 }
 
