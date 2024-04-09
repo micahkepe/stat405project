@@ -103,7 +103,7 @@ dbDisconnect(con)
 
 Car crashes in the United States represent a significant public health concern, with over 42,900 deaths involving over 61,000 vehicles in 2020 according to the Insurance Institute for Highway Safety. The economic impact of car crashes is also substantial, with an estimated cost of \$340 billion in 2019 via the National Highway Traffic Safety Administration. Not only does preventing car crashes save lives, but it also saves money and resources.
 
-In the bustling metropolis of New York City, the largest city in the United States, motor vehicle crashes occur frequently and result in substantial economic costs. They cause injuries, deaths, financial damages, and create an contribute to an atmosphere of uncertainty and fear. Reducing the number of crashes, especially those that are fatal, is key to improving the safety of the city.
+In the bustling metropolis of New York City, the largest city in the United States, motor vehicle crashes occur frequently and result in substantial socioeconomic costs. They cause injuries, deaths, financial damages, and contribute to an atmosphere of uncertainty and fear. Reducing the number of crashes, especially those that are fatal, is key to improving the safety of the city.
 
 In this project, we will examine data on motor vehicle crashes in New York City to uncover underlying trends and discern the most important factors that contribute to potentially fatal accidents. By analyzing the data, we seek to provide stakeholders with actionable insights and recommendations to reduce the number of collisions and deaths.
 
@@ -339,9 +339,9 @@ text(x = bar_midpoints, y = ordered_crash_percentage + 0.5,
 
 ```
 
-We plotted the frequency of car crashes per borough in NYC. The goal of this graph was to gain a better understanding of which boroughs were more likely to result in car crashes.
+We plotted the frequency (relative to borough size) of car crashes per borough in NYC. The goal of this graph was to gain a better understanding of which boroughs were more likely to result in car crashes.
 
-The borough with the least car crashes is Staten Island at around 75,000 car crashes, while the borough with the most car crashes is Brooklyn with around 450,000 car crashes. This graph gives us a better understanding of the likelihood that a car crash will occur in a certain borough. However, a consideration that is not specified is the amount of traffic through the boroughs.
+The borough with the least car crashes is Staten Island at around 75,000 car crashes, while the borough with the most car crashes is Brooklyn with around 450,000 car crashes. However, relative to borough size, Queens had the most car crashes per capita. Manhatten and Staten Island had the lowest number of crashes per capita. This graph gives us a better understanding of the likelihood of crashes occurring in a certain borough. However, a consideration that is not specified is the amount of traffic through the boroughs.
 
 An important caveat for this graphic is that the population counts used to determine the percentages are from the most recent census, and we did not factor in population change across borough from 2012-2024. This affects the accuracy of the derived percentages, but the general trends are still useful for understanding the likelihood of car crashes in each borough.
 
