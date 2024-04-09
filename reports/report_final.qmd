@@ -341,9 +341,9 @@ text(x = bar_midpoints, y = ordered_crash_percentage + 0.5,
 
 We plotted the frequency (relative to borough size) of car crashes per borough in NYC. The goal of this graph was to gain a better understanding of which boroughs were more likely to result in car crashes.
 
-The borough with the least car crashes is Staten Island at around 75,000 car crashes, while the borough with the most car crashes is Brooklyn with around 450,000 car crashes. However, relative to borough size, Queens had the most car crashes per capita. Manhatten and Staten Island had the lowest number of crashes per capita. This graph gives us a better understanding of the likelihood of crashes occurring in a certain borough. However, a consideration that is not specified is the amount of traffic through the boroughs.
+The borough with the least car crashes is Staten Island at around 75,000 car crashes, while the borough with the most car crashes is Brooklyn with around 450,000 car crashes. However, relative to borough size, Queens had the most car crashes per capita. Manhatten and Staten Island had the lowest number of crashes per capita. This graph gives us a better understanding of the likelihood of crashes occurring in a certain borough. 
 
-An important caveat for this graphic is that the population counts used to determine the percentages are from the most recent census, and we did not factor in population change across borough from 2012-2024. This affects the accuracy of the derived percentages, but the general trends are still useful for understanding the likelihood of car crashes in each borough.
+An important caveat for this graphic is that the population counts used to determine the percentages are from the most recent census in 2020. Additionally, the plot does not factor in population change across boroughs from 2012-2024. We also did not consider the amount of traffic through each borough, which could influence car crash likelihoods. The derived percentages may not be 100% accurate, but the general trends are still useful for understanding the likelihood of car crashes in each borough.
 
 ### Density of Car Crashes in NYC
 
@@ -437,7 +437,7 @@ ggplot(cleaned_crashes_data, aes(x = as.numeric(substr(CRASH.TIME, 1, 2)))) +
 
 ```
 
-The histogram of car crashes by time of day shows that the most car crashes occur around the hours of 3:00PM and 6:00PM. This is likely due to the fact that these are the hours when people are getting off work and are driving home. The least amount of car crashes occur around the hours of 3:00AM and 4:00AM, which is likely due to the fact that these are the hours when people are sleeping and there is less traffic on the road. This graph gives us a better understanding of when car crashes are most likely to occur. An important consideration that is that traffic patterns may vary seasonally and by day of the week, which could affect the number of car crashes.
+The histogram of car crashes by time of day shows that the most car crashes occur between the hours of 3:00PM and 6:00PM. This is likely due to the fact that these are the hours when people are getting off work and are driving home. The least amount of car crashes occur around the hours of 3:00AM and 4:00AM, which is likely due to the fact that these are the hours when people are sleeping and there is less traffic on the road. This graph gives us a better understanding of when car crashes are most likely to occur. An important consideration is that traffic patterns may vary seasonally and by day of the week, which could affect the number of car crashes.
 
 ### Line Plot of Top 3 Contributing Factors by Time of Day
 
@@ -484,7 +484,7 @@ ggplot(factor_by_hour, aes(x = HOUR, y = Count, color = CONTRIBUTING.FACTOR.VEHI
 
 ```
 
-The scatter plot of the top 3 contributing factors by time of day show how the top factors contribute to the number of car crashes throughout the day. What can be seen is that distracted driving is consistently the biggest factor contributing to car crashes. During hours with the most crashes, such as 8:00AM and 5:00PM, all 3 factors reach peaks. All contributing factors show that the crash amount increases between the hours of 8:00AM and 5:00PM and decreases outside of those hours. This graph gives us a better understanding of the relationship between time of day, number of crashes, and contributing factors.
+The line plot of the top 3 contributing factors by time of day show how the top factors contribute to the number of car crashes throughout the day. What can be seen is that distracted driving is consistently the biggest factor contributing to car crashes. During hours with the most crashes, such as 8:00AM and 5:00PM, all 3 factors reach peaks. All contributing factors show that the crash amount increases between the hours of 8:00AM and 5:00PM and decreases outside of those hours. This graph gives us a better understanding of the relationship between time of day, number of crashes, and contributing factors.
 
 ### Temporal Density Maps
 
@@ -530,7 +530,7 @@ ggplot(heatmap_df, aes(x = HourOfDay, y = DayOfWeek, fill = Frequency)) +
 
 ```
 
-The temporal density map shows the frequency of car crashes by day of the week and hour of the day. There is an evident "safe zone" on weekdays between the hours of 1:00AM and 5:00AM. This is expected as these are not usually times where there are lots of people active. Interesting, "danger zones" are evident on weekdays between the hours of 8:00AM and 10:00AM and 4:00PM and 6:00PM. One possible explanation for this is that these are the hours when people are driving to and from work. This graph dispels the myth that most car crashes occur at night and shows that most car crashes actually occur during the day.
+The temporal density map shows the frequency of car crashes by day of the week and hour of the day. There is an evident "safe zone" on weekdays between the hours of 1:00AM and 5:00AM. This is expected as these are times when there are less people actively driving on the road. Interestingly, "danger zones" are evident on weekdays between the hours of 8:00AM and 10:00AM and 4:00PM and 6:00PM. One possible explanation for this is that these are the hours when people are driving to and from work. This graph dispels the myth that most car crashes occur at night and shows that most car crashes actually occur during the day.
 
 The most damaging car crashes are of course those that result in loss of life. Since one of the primary goals of our analysis is to examine potential trends that result in fatal car crashes, we pose the following question: When are fatal car crashes more likely to occur?
 
@@ -604,11 +604,11 @@ ggplot(heatmap_df, aes(x = HourOfDay, y = 1, fill = Frequency)) +
 
 ```
 
-This temporal density map shows the frequency of fatal car crashes by only the hour of the day. This heat map suggests that time of the day does have a significant impact on instances of fatal car crashes. In particular, fatal car crashes seem to be more likely to occur in the evening or at night. This may be due to reduced visibility at later hours. The number of fatal car crashes peaks drastically between the hours of 5:00PM and 7:00PM. This is likely due to the compounding factors of reduced visibility at night and increased traffic with people leaving work. In the early morning hours between 1:00AM and 9:00AM, there are less occurrences of fatal crashes. However, there does appear to be a significant number of fatal crashes that occur between the hours of 4:00AM and 6:00AM. This is in contrast to the "danger zone" observed between the hours of 8:00AM and 10:00AM in the first temporal density map. That "danger zone" was explained increased traffic as people commuted from work. Increased traffic can also partially explain the peak in fatal car crashes between 4:00AM and 6:00AM. However, reduced visibility in early morning hours likely compounded the risks.
+This temporal density map shows the frequency of fatal car crashes by only the hour of the day. This heat map suggests that time of the day does have a significant impact on instances of fatal car crashes. In particular, fatal car crashes seem to be more likely to occur in the evening or at night. This may be due to reduced visibility at later hours. The number of fatal car crashes peaks drastically between the hours of 5:00PM and 7:00PM. This is likely due to the compounding factors of reduced visibility at night and increased traffic with people leaving work. In the early morning hours between 1:00AM and 9:00AM, there are less occurrences of fatal crashes. However, there does appear to be a significant number of fatal crashes that occur between the hours of 4:00AM and 6:00AM. This is in contrast to the "danger zone" observed between the hours of 8:00AM and 10:00AM in the first temporal density map. That "danger zone" was partly attributed to increased traffic as people commuted from work. Increased traffic can also partially explain the peak in fatal car crashes between 4:00AM and 6:00AM as there are some people who need to drive to work earlier in the morning. However, reduced visibility in early morning hours likely compounded the risks.
 
 The three temporal density plots above show that car crashes are more likely to occur during hours of high traffic when people are commuting to and from work. However, fatal car crashes are more likely caused by reduced visibility during darker hours, although amount of traffic is still a partially contributing factor.
 
-### Stack Area Plot of Contributing Factors and Crash Count by Year
+### Area Plots of Contributing Factors and Crash Count by Year
 
 Now that we have an idea of which contributing factors to crashes are most common, we pose the following question: How have the frequency of contributing factors to crashes changed over time?
 
@@ -660,7 +660,7 @@ ggplot(agg_data, aes(x = YEAR, y = COUNT,
 
 ```
 
-The stacked area plot of the top 5 contributing factors to car crashes by year shows how the top contributing factors changed over the years. What can be seen is that the number of crashes peaked in 2018 at around 67,500 crashes and that driver inattention/distraction grew rapidly from 2012 to 2018. Then, all contributing factors started to decrease 2020 to 2024 most likely due to COVID and stay-at-home orders. This graph gives us a better understanding of the relationship between the year, number of crashes, and contributing factors.
+The area plots of the top 5 contributing factors to car crashes by year show how the top contributing factors changed over the years. What can be seen is that the number of crashes peaked in 2018 at around 67,500 crashes and that driver inattention/distraction grew rapidly from 2012 to 2018. Then, all contributing factors started to decrease from 2020 to 2024. This is most likely due to COVID-19 stay-at-home orders reducing the number of cars on the road. This graph gives us a better understanding of the relationship between the year, the number of crashes, and contributing factors to crashes.
 
 ### Jitter Plot of Fatalities and Injuries by Contributing Factor
 
