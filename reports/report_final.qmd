@@ -341,7 +341,7 @@ text(x = bar_midpoints, y = ordered_crash_percentage + 0.5,
 
 We plotted the frequency (relative to borough size) of car crashes per borough in NYC. The goal of this graph was to gain a better understanding of which boroughs were more likely to result in car crashes.
 
-The borough with the least car crashes is Staten Island at around 75,000 car crashes, while the borough with the most car crashes is Brooklyn with around 450,000 car crashes. However, relative to borough size, Queens had the most car crashes per capita. Manhatten and Staten Island had the lowest number of crashes per capita. This graph gives us a better understanding of the likelihood of crashes occurring in a certain borough. 
+The borough with the least car crashes is Staten Island at around 75,000 car crashes, while the borough with the most car crashes is Brooklyn with around 450,000 car crashes. However, relative to borough size, Queens had the most car crashes. Manhatten and Staten Island had the lowest number of crashes relative to borough size. This graph gives us a better understanding of the likelihood of crashes occurring in a certain borough. 
 
 An important caveat for this graphic is that the population counts used to determine the percentages are from the most recent census in 2020. Additionally, the plot does not factor in population change across boroughs from 2012-2024. We also did not consider the amount of traffic through each borough, which could influence car crash likelihoods. The derived percentages may not be 100% accurate, but the general trends are still useful for understanding the likelihood of car crashes in each borough.
 
@@ -731,7 +731,7 @@ ggplot(bubble_data, aes(x = Contributing_Factor_Category,
 
 ```
 
-The bubble plot shows the relationship between contributing factors and vehicle types in car crashes. The relative sizing of the bubbles are indicative of which contributing factors, in combination with the type of vehicle involved, result in the most crashes. The plot shows that the most common contributing factors are related broadly to driver behavior, and the most common vehicle types involved in crashes are passenger vehicles. A working hypothesis for why this is the case is that passenger vehicles are the most common type of vehicle on the road and previous analysis has shown that driver inattention/distraction is the most common contributing factor to crashes. Additionally, the insights gained from the time analysis showed clusters of crashes during rush hours. Holistically, it is not hard to envision the scenario in which commuters are in a rush to get to work or home, and are not paying attention to the road, resulting in crashes.
+The bubble plot shows the relationship between contributing factor categories and vehicle types in car crashes. The relative sizing of the bubbles are indicative of which contributing factor categories, in combination with the type of vehicle involved, result in the most crashes. The plot shows that the most common contributing factor categories are related broadly to driver behavior, and the most common vehicle types involved in crashes are passenger vehicles. A working hypothesis for why this is the case is that passenger vehicles are the most common type of vehicle on the road and previous analysis has shown that driver inattention/distraction is the most common contributing factor to crashes. Additionally, the insights gained from the time analysis showed clusters of crashes during rush hours. Holistically, it is not hard to envision the scenario in which commuters are in a rush to get to work or home, and are not paying attention to the road, resulting in crashes.
 
 ### Killer Plot Example
 
@@ -745,11 +745,11 @@ The example illustrates the type of insights that can be gained from the analysi
 
 ### Key Findings From the Exploratory Data Analysis
 
-**Borough-wise Crash Frequency:** We found that some boroughs experience more crashes than others, with Brooklyn leading the chart. This could relate to population density, traffic flow, or other urban factors.
+**Borough-wise Crash Frequency:** We found that car crashes are more likely to occur in some boroughs than others, with Queens leading the chart. This could be related to population density, traffic flow, or other urban factors.
 
 **Crash Density and Landmarks:** A map showing where crashes happen most frequently revealed that central areas with heavy traffic and significant landmarks are hotspots for incidents.
 
-**Time of Day Analysis:** Crashes peak during evening rush hours, suggesting that the end-of-day commute might be particularly hazardous. Fatal crashes are prominent during the evening and the night, when darkness causes reduced visibility.
+**Time of Day Analysis:** Crashes peak during evening rush hours, suggesting that the end-of-day commute might be particularly hazardous. Fatal crashes are prominent during the evening, night, and early morning, when darkness causes reduced visibility.
 
 **Contributing Factors:** Distracted driving emerged as a leading cause of accidents, highlighting the need for increased awareness and possibly stricter regulations on driver attention.
 
