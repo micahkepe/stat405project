@@ -112,9 +112,10 @@ library(revealjs)
 -   By far the largest contributing factor to crashes is Driver Inattention/Distraction.
 :::
 
+
 ## Temporal Density Plots {auto-animate="true"}
 
--   Prior bias made us believe that most crashes occurred during the early morning hours when people could be returning from bars and events.
+-   Prior bias made us believe that most crashes occurred during the early morning hours when visibility is low.
 
 ::: incremental
 -   However ... <br/>
@@ -125,7 +126,7 @@ library(revealjs)
 -   The following plots provide insights into the temporal distribution of crashes along several time dimensions, each revealing unique patterns and trends.
 :::
 
-## **1. Crashes by Day of Week and Hour of Day** {.smaller auto-animate="true"}
+## 1. Crashes by Day of Week and Hour of Day {.smaller auto-animate="true"}
 
 ::: columns
 ::: {.column width="60%"}
@@ -162,7 +163,7 @@ library(revealjs)
 <!-- ::: -->
 <!-- ::: -->
 
-## **2. Fatal Crashes by Hour of Day** {.smaller auto-animate="true"}
+## 2. Fatal Crashes by Hour of Day {.smaller auto-animate="true"}
 
 <img src="./reports/figures/fatal-crashes-by-hour.png"/>
 
@@ -175,7 +176,7 @@ library(revealjs)
 
 -   These visualizations provide further insights into the contributing factors and vehicle types involved in car crashes.
 
-## Stack Area Plot of Contributing Factors Over Time {auto-animate="true"}
+## 1. Stack Area Plot of Contributing Factors Over Time {auto-animate="true"}
 
 <img src="./reports/figures/stacked-area-plot.png"/>
 
@@ -187,7 +188,7 @@ library(revealjs)
 
 <!-- <img src="./reports/figures/bubble-plot.png"/> -->
 
-## Killer Plot {.smaller auto-animate="true"}
+## 2. Killer Plot {.smaller auto-animate="true"}
 
 <iframe src="https://micahkepe.shinyapps.io/NYC-Crashes/" width="100%" height="650px">
 
@@ -212,7 +213,7 @@ library(revealjs)
 - We will focus on the results and insights from the GLM model.
 :::
 
-## Background on GLMs {.smaller auto-animate="true"}
+## Background on GLMs {auto-animate="true"}
 
 ::: incremental
 <!-- -   **Decision Tree**: A tree-like model that predicts the value of a target variable based on several input variables. Following a set of rules, the model splits the data into subsets based on the input variables. The resulting tree structure helps identify the most important predictors of the target variable (in our case, fatalities in car crashes). -->
@@ -277,8 +278,4 @@ lower count, suggesting geographical differences in traffic safety or reporting 
 ## Thank You! {auto-animate="true"}
 :::{.fragment .fade-in}
 <br/>*Any questions?*
-:::
-
-::: footer
-Source code available on [GitHub](https://github.com/micahkepe/stat405project)
 :::
