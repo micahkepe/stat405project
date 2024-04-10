@@ -140,7 +140,7 @@ library(revealjs)
 ::: {.fragment .fade-in}
 -   The heatmap illustrates the distribution of crashes by day of the week and hour of the day, with darker shades indicating higher crash frequencies.
 -   Clearly a clustering of crashes during the weekdays, with a slight decrease on weekends.
--   Within the weekdays, the evening rush hours are the most dangerous (8:00-9:00 AM and 4:00-6:00 PM)
+-   Within the weekdays, the rush hours are the most dangerous (8:00-9:00 AM and 4:00-6:00 PM)
 :::
 :::
 :::
@@ -168,7 +168,7 @@ library(revealjs)
 <img src="./reports/figures/fatal-crashes-by-hour.png"/>
 
 ::: {.fragment .fade-in}
--   Reducing the time dimension to just the hour of the day, we see that fatal crashes are more prominent during the evening and night hours.
+-   Reducing the time dimension to just the hour of the day and looking only at fatal crashes, we see that fatal crashes are more prominent during the evening, night, and early morning hours.
 -   This insight can inform targeted interventions during these high-risk periods.
 :::
 
@@ -197,9 +197,9 @@ library(revealjs)
 ## Key Findings from Exploratory Analysis {.smaller auto-animate="true"}
 
 ::: incremental
--   ***Temporal patterns***: Crashes are more frequent during the middle of the day and evening rush hours, with fatal crashes more prevalent during the evening and night hours.
+-   ***Temporal patterns***: Crashes are more frequent during the middle of the day and evening rush hours, with fatal crashes more prevalent during the evening, night, and early morning hours.
 -   ***Contributing factors***: Driver Inattention/Distraction is the leading cause of crashes, emphasizing the need for driver awareness programs.
--   ***Borough disparities***: Brooklyn has the highest crash frequency per capita, highlighting the need for targeted interventions in high-risk areas.
+-   ***Borough disparities***: Queens has the highest crash frequency per capita, highlighting the need for targeted interventions in high-risk areas.
 -   ***Potential interference effect of COVID-19***: The stacked area plot shows a significant decrease in crashes during the pandemic, suggesting the impact of external factors on crash occurrences with stay-at-home orders.
 :::
 
