@@ -941,16 +941,16 @@ It is important to note, however, that while GLM provides valuable insights, it 
 
 ## Conclusion
 
-Through our exploration, we've unearthed patterns and insights that shed light on the complex nature of car crashes in New York City. Our findings point toward actionable insights, such as the need for targeted interventions during high-risk times of the day, the importance of considering geographical differences in traffic safety, and the potential for tailored interventions for different age groups. While our study offers detailed analysis, it is only the beginning of a broader effort to understand and address the multifaceted issue of car crashes. Future work could involve more advanced predictive modeling, such as ensemble methods or neural networks, to improve the accuracy of our predictions. Additionally, further research could explore the impact of external factors, such as weather conditions, road infrastructure, and vehicle safety features, on the likelihood of car crashes. By continuing to investigate and address the complex issue of car crashes, we can work toward a safer and more sustainable future for all road users.
+Through our exploration, we've unearthed patterns and insights that shed light on the complex nature of car crashes in New York City. Our findings suggest the need for interventions to reduce fatal car crashes, particularly during high-risk times of the day like evening and morning rush hours. Our predictive modelling indicates the importance of considering geographical differences in traffic safety, and differences between age groups. However, our study is only the beginning of what should be a broader effort to understand and address the causes and effects of car crashes. Future work could involve more advanced predictive modeling, such as ensemble methods or neural networks, to improve the accuracy of our predictions. Additionally, further research could explore the impact of external factors, such as weather conditions, road infrastructure, and vehicle safety features, on the likelihood of car crashes. By continuing to investigate and address the complex issue of car crashes, we can work towards a safer and more sustainable future for all road users.
 
-As it stands, some key findings from our analysis can be summarized as follows into these practical insights:
+As it stands, some key findings from our analysis can be summarized as follows:
 
 \- Most crashes occur during morning and evening rush hours, suggesting the need for targeted interventions during these high-risk times.
 
-\- The borough of Manhattan shows a significantly lower count of injuries or fatalities compared to other boroughs, suggesting geographical differences in traffic safety or reporting practices
+\- The borough of Manhattan shows a significantly lower count of injuries or fatalities (relative to borough population) compared to other boroughs, suggesting geographical differences in traffic safety or reporting practices
 
 \- The leading cause of car crashes is driver inattention or distraction, highlighting the need for increased awareness and possibly stricter regulations on driver attention.
 
-\- Fatal crashes are prominent during the evening and the night, when darkness causes reduced visibility.
+\- Fatal crashes are prominent during the evening, night, and early morning, when darkness causes reduced visibility.
 
 \- The top 5 contributing factors to car crashes have been decreasing since 2020, which could be due to the COVID-19 pandemic and stay-at-home orders. The lasting impact of the pandemic on traffic safety remains to be seen.
