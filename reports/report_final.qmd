@@ -60,7 +60,7 @@ library(kableExtra)
 library(shiny)
 library(htmltools)
 
-# Create a "cache" directory if it doesn't exist
+# Create a "cache" directory if it doesn't already exist
 if (!dir.exists("cache")) {
   dir.create("cache")
 }
