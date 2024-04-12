@@ -36,32 +36,6 @@ library(revealjs)
 -   **Comprehensiveness**: Over 2 million records detailing location, individuals affected, and more.
 :::
 
-<!-- ## Data Cleaning and Preprocessing {auto-animate="true"} -->
-
-<!-- We refined our dataset to ensure accuracy, resulting in 1,382,320 observations for analysis from an original \~2.1 million observations. This involved: -->
-
-<!-- ::: incremental -->
-<!-- -   Removing rows with missing values in critical columns. -->
-<!-- -   Standardizing formats for date and time. -->
-<!-- -   Categorizing contributing factors and vehicle types for better analysis. -->
-<!-- -   Removing columns with redundant information to maintain "tidy" data. -->
-<!-- ::: -->
-
-<!-- ## Leveraging Additional NYC OpenData Datasets {.smaller auto-animate="true"} -->
-
-<!-- ::: columns -->
-<!-- ::: {.column width="65%"} -->
-<!-- <img src="./reports/figures/data-diagram.jpg" width="100%"/> -->
-<!-- ::: -->
-
-<!-- ::: {.column width="35%"} -->
-<!-- ::: {.fragment .fade-in} -->
-<!-- -   We integrated additional NYC OpenData datasets, providing greater granularity and context to each of the observations. -->
-<!-- -   More information on the persons and vehicles involved in each crash -->
-<!-- -   Each interconnect via the collision ID as the foreign key -->
-<!-- ::: -->
-<!-- ::: -->
-<!-- ::: -->
 
 ## Exploratory Data Analysis {auto-animate="true"}
 
@@ -145,23 +119,6 @@ library(revealjs)
 :::
 :::
 
-<!-- ## **2. Fatal Crashes by Day of Week and Hour of Day** {.smaller auto-animate="true"} -->
-
-<!-- ::: columns -->
-<!-- ::: {.column width="60%"} -->
-<!-- <img src="./reports/figures/fatal-crashes-day-and-hour.png"/> -->
-<!-- ::: -->
-
-<!-- ::: {.column width="2%"} -->
-<!-- ::: -->
-
-<!-- ::: {.column width="38%"} -->
-<!-- ::: {.fragment .fade-in} -->
-<!-- -   When only considering fatal crashes, the heatmap shows sporadic patterns, which differs from the overall crash distribution. -->
-<!-- -   Fatal crashes are more evenly distributed across the week, with a slight increase on weekends. -->
-<!-- ::: -->
-<!-- ::: -->
-<!-- ::: -->
 
 ## 2. Fatal Crashes by Hour of Day {.smaller auto-animate="true"}
 
@@ -176,17 +133,11 @@ library(revealjs)
 
 -   These visualizations provide further insights into the contributing factors and vehicle types involved in car crashes.
 
+
 ## 1. Stack Area Plot of Contributing Factors Over Time {auto-animate="true"}
 
 <img src="./reports/figures/stacked-area-plot.png"/>
 
-<!-- ## Jitter Plot of Fatalities and Injuries by Contributing Factors {auto-animate="true"} -->
-
-<!-- <img src="./reports/figures/jitter-plot.png"/> -->
-
-<!-- ## Bubble Plot Between Contributing Factors and Vehicle Type {auto-animate="true"} -->
-
-<!-- <img src="./reports/figures/bubble-plot.png"/> -->
 
 ## 2. Killer Plot {.smaller auto-animate="true"}
 
@@ -216,28 +167,9 @@ library(revealjs)
 ## Background on GLMs {auto-animate="true"}
 
 ::: incremental
-<!-- -   **Decision Tree**: A tree-like model that predicts the value of a target variable based on several input variables. Following a set of rules, the model splits the data into subsets based on the input variables. The resulting tree structure helps identify the most important predictors of the target variable (in our case, fatalities in car crashes). -->
-
-<!-- <br/> -->
-
 -   **Generalized Linear Model (GLM)**: A flexible generalization of ordinary linear regression that allows for non-normal error distributions. GLMs are used to model the relationship between a response variable and one or more explanatory variables. In our analysis, we used a GLM to predict the likelihood of fatalities in car crashes based on various factors, assuming a Poisson distribution.
 :::
 
-<!-- ## Decision Tree {.smaller auto-animate="true"} -->
-
-<!-- ::: columns -->
-<!-- ::: {.column width="70%"} -->
-<!-- <img src="./reports/figures/decision-tree-results.png"/> -->
-<!-- ::: -->
-
-<!-- ::: {.column width="30%"} -->
-<!-- ::: incremental -->
-<!-- -  The model's interpretability makes it a valuable tool for identifying high-risk groups and developing targeted interventions. -->
-<!-- - Tendency to overfit the data as the max depth increases, which led us explore a GLM model as an alternative approach. -->
-<!-- ::: -->
-<!-- ::: -->
-
-<!-- ::: -->
 
 ## Generalized Linear Model {.smaller auto-animate="true"}
 
