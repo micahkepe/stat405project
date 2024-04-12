@@ -115,7 +115,7 @@ The NYC OpenData dataset contains details of motor vehicle collision occurrences
 
 ```{r echo=FALSE}
 
-# Function for categorizing contributing factors
+# Function for categorizing the contributing factors
 categorize_factors <- function(data_crashes) {
   categorized_data <- sqldf("
     SELECT *,
